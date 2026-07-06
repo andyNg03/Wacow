@@ -1,7 +1,5 @@
 # Wacow — Fitness Tracking App
 
-A cross-platform fitness tracking app built with React Native (Expo) and Supabase. Designed to help users log workouts, track progress, and build consistency through gamification.
-
 ## Tech Stack
 
 - **Frontend:** React Native (Expo), JavaScript
