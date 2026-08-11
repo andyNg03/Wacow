@@ -50,7 +50,3 @@
    ```bash
    npx expo start
    ```
-
-## Team
-
-Built by Group 16 — Oasis NEU, Spring 2026
