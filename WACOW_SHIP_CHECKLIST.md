@@ -116,14 +116,26 @@ to.** Listing them as open choices invites someone to spend a week building the 
 
 **Group B — genuine decisions. The data exists or is cheap; the team calls it.**
 
+**Decided Aug 14 — motto: real data or delete, no exceptions.**
+
 | Item | Wiring cost | Decision |
 |---|---|---|
-| Greetings card → user's name | `users.name` exists, ~20 min | ☐ wire ☐ delete |
-| StatsScreen "This week" / "Activity This Week" | computable from `sessions` | ☐ wire ☐ delete |
-| Monthly goal | `users.weekly_goal` exists | ☐ wire ☐ delete |
-| Edit Profile button | reuses ProfileSetupScreen | ☐ wire ☐ delete |
-| MoreScreen placeholder menu items | varies per item | ☐ wire ☐ delete |
-| `ProfileHeader.js:32` hardcoded `"Gym Hero"` | same as greetings card | ☐ wire ☐ delete |
+| Greetings card → user's name | `users.name` exists, ~20 min | ☑ wire |
+| StatsScreen "This week" / "Activity This Week" (workouts, active time) | computable from `sessions`; no existing query pattern in the repo yet, new aggregation logic | ☑ wire |
+| StatsScreen "calories" stat | no calories column exists anywhere in the `sessions` insert shape — nothing to wire | ☑ delete |
+| Monthly goal | `users.weekly_goal` value is trivial; "progress" rides on the same `sessions` aggregation as the week stats above | ☑ wire |
+| Edit Profile button | reuses ProfileSetupScreen — **must add pre-fill of existing values first**, or opening it blanks out a user's real profile | ☑ wire |
+| `ProfileHeader.js:32` hardcoded `"Gym Hero"` | same pattern as greetings card | ☑ wire |
+
+**MoreScreen placeholder menu items** — decided per row, not as one item:
+
+| Row | Decision | Notes |
+|---|---|---|
+| Settings | ☑ wire (minimal) | A few basic settings — exact contents still TBD, team call, not decided here |
+| Help & Support | ☑ wire | New screen, two options: "Question" and "Report Issue" |
+| Share App | ☑ wire | Trivial — native `Share.share()`, no backend |
+| Rate Us | ☑ delete | No App Store link exists pre-launch — can't wire a link that doesn't exist yet |
+| About | ☑ wire | New screen: "WaCow 2026, co-founded by Jiaxiu Li, Andrew Nguyen, Zahi Ladhkan, and Tarun Kancharla" (alphabetical) — use `src/style/theme.js`, not hardcoded styles |
 
 **Group C — additions, not removals (tracked here so 1a is the single UI worklist)**
 

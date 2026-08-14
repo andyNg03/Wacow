@@ -1,21 +1,16 @@
-// Profile Screen — shows user header, stats, badges, personal info, and edit/logout buttons
+// Profile Screen — shows user header, stats, personal info, and edit/logout buttons
 
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import ProfileHeader from '../components/ProfileHeader'
 import StatsGrid from '../components/StatsGrid'
-import BadgesSection from '../components/BadgesSection'
 import PersonalInfo from '../components/PersonalInfo'
 import { supabase } from '../lib/supabase'
 import { colors, borders, spacing, typography } from '../style/theme'
 
 // Hardcoded for now — will come from Supabase once auth is connected
-let level = 6;
-let currentXP = 750;
-let goalXP = 1000;
 let workouts = 54;
 let daysActive = 12;
-let totalXP = 2650;
 let personalInfo = [
     { key: 'Member Since', value: 'January 2026' },
     { key: 'Favorite Workout', value: 'Bench Press' },
@@ -30,14 +25,11 @@ export default function ProfileScreen() {
 
     return (
         <ScrollView style={styles.container}>
-            {/* User level, XP bar, avatar */}
-            <ProfileHeader level={level} currentXP={currentXP} goalXP={goalXP} />
+            {/* User avatar and name */}
+            <ProfileHeader />
 
-            {/* 3 stat boxes — workouts, days active, total XP */}
-            <StatsGrid workouts={workouts} daysActive={daysActive} totalXP={totalXP} />
-
-            {/* Badge grid */}
-            <BadgesSection />
+            {/* Stat boxes — workouts, days active */}
+            <StatsGrid workouts={workouts} daysActive={daysActive} />
 
             {/* Personal info rows */}
             <PersonalInfo data={personalInfo} />

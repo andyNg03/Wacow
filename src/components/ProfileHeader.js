@@ -1,15 +1,11 @@
-// ProfileHeader — red gradient card with avatar, name, level, and XP progress bar
+// ProfileHeader — red gradient card with avatar and name
 
 import { View, Text, StyleSheet } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, borders, spacing, typography } from '../style/theme'
+import { colors, borders, spacing } from '../style/theme'
 
-// Props: level (number), currentXP (number), goalXP (number)
-export default function ProfileHeader({ level, currentXP, goalXP }) {
-    // Calculate XP bar fill percentage
-    const xpPercent = (currentXP / goalXP) * 100
-
+export default function ProfileHeader() {
     return (
         <View style={styles.shadowWrapper}>
             <LinearGradient
@@ -18,7 +14,7 @@ export default function ProfileHeader({ level, currentXP, goalXP }) {
                 end={{ x: 1, y: 1 }}
                 style={styles.card}
             >
-                {/* Top row — avatar + name + level */}
+                {/* Top row — avatar + name */}
                 <View style={styles.topRow}>
                     {/* Avatar circle with person icon */}
                     <View style={styles.avatarWrapper}>
@@ -31,19 +27,8 @@ export default function ProfileHeader({ level, currentXP, goalXP }) {
                             <Ionicons name="star" size={18} color={colors.streakCard} />
                             <Text style={styles.name}>Gym Hero</Text>
                         </View>
-                        <Text style={styles.level}>Level {level} Champion</Text>
                     </View>
                 </View>
-
-                {/* XP progress bar — width is dynamic */}
-                <View style={styles.xpBarBackground}>
-                    <View style={[styles.xpBarFill, { width: `${xpPercent}%` }]} />
-                </View>
-
-                {/* XP text */}
-                <Text style={styles.xpText}>
-                    {currentXP}/{goalXP} XP to Level {level + 1} - Almost there!
-                </Text>
             </LinearGradient>
         </View>
     )
@@ -90,30 +75,5 @@ const styles = StyleSheet.create({
         color: colors.textLight,
         fontSize: 22,
         fontWeight: '900',
-    },
-    level: {
-        ...typography.body,
-        color: colors.textLight,
-        opacity: 0.9,
-    },
-    // Grey transparent track
-    xpBarBackground: {
-        backgroundColor: 'rgba(255,255,255,0.3)',
-        borderRadius: 999,
-        height: 12,
-        borderWidth: 2,
-        borderColor: colors.border,
-        overflow: 'hidden',
-        marginBottom: spacing.sm,
-    },
-    // Gold fill — dynamic width via inline style
-    xpBarFill: {
-        backgroundColor: colors.streakCard,
-        height: '100%',
-        borderRadius: 999,
-    },
-    xpText: {
-        ...typography.small,
-        color: colors.textLight,
     },
 })
