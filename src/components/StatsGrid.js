@@ -1,17 +1,16 @@
-// StatsGrid — row of 3 stat boxes showing workouts, days active, and total XP
+// StatsGrid — row of 2 stat boxes showing workouts and days active
 // Each box has a different background color matching the theme
-// red → gold → black
+// red → gold
 
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, borders, spacing, typography } from '../style/theme'
 
 // Each box config — icon, background color, icon color
-// Matches the reference: red, gold, black
+// Matches the reference: red, gold
 const BOX_CONFIGS = [
-    { icon: 'trending-up', bgColor: colors.primary,         iconColor: colors.textLight  },
-    { icon: 'heart',       bgColor: colors.streakCard,      iconColor: colors.textLight  },
-    { icon: 'flash',       bgColor: colors.achievementCard, iconColor: colors.streakCard },
+    { icon: 'trending-up', bgColor: colors.primary,    iconColor: colors.textLight },
+    { icon: 'heart',       bgColor: colors.streakCard, iconColor: colors.textLight },
 ]
 
 // Individual stat box
@@ -27,10 +26,10 @@ function StatBox({ icon, bgColor, iconColor, value, label }) {
     )
 }
 
-// Props: workouts, daysActive, totalXP (all numbers)
-export default function StatsGrid({ workouts, daysActive, totalXP }) {
-    const values = [workouts, daysActive, totalXP]
-    const labels = ['Workouts', 'Days Active', 'Total XP']
+// Props: workouts, daysActive (both numbers)
+export default function StatsGrid({ workouts, daysActive }) {
+    const values = [workouts, daysActive]
+    const labels = ['Workouts', 'Days Active']
 
     return (
         <View style={styles.grid}>

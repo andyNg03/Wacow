@@ -1,10 +1,9 @@
-// Stats Screen — shows weekly summary, activity chart, monthly goal, and latest achievement
+// Stats Screen — shows weekly summary, activity chart, and monthly goal
 
-import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import { Text, ScrollView, StyleSheet } from 'react-native'
 import WeekSummary from '../components/WeekSummary'
 import WeeklyChart from '../components/WeeklyChart'
 import MonthlyGoal from '../components/MonthlyGoal'
-import LatestAchievement from '../components/LatestAchievement'
 import { colors, typography, spacing } from '../style/theme'
 
 // Hardcoded data for now — will be replaced with Supabase queries later
@@ -40,9 +39,6 @@ export default function StatsScreen() {
 
             {/* Monthly goal with progress bar */}
             <MonthlyGoal goal={goal} progress={progress} />
-
-            {/* Latest badge/achievement earned */}
-            <LatestAchievement />
         </ScrollView>
     )
 }
