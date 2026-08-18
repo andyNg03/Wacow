@@ -57,28 +57,28 @@ Not a phase, but these block the *end* of the schedule, so they can't wait for t
       Individual enrollment is often same-day but can take 1–2 days.
       *If you enroll as an **organization** you need a D-U-N-S number, which takes 1–2+
       weeks — that would blow the deadline. **Enroll as an individual.***
-- [ ] **Confirm physical iPhone access** for at least one person. The simulator will not
+- [x] **Confirm physical iPhone access** for at least one person. The simulator will not
       surface layout, keyboard, safe-area, or performance issues, and reviewers test on
       real hardware.
-- [ ] **Decide the bundle identifier** (e.g. `com.wacow.app`) — currently
-      `com.joshuali000000.s26group16` in `app.json`. **Permanent after first upload.**
-- [ ] **Set `ios.supportsTablet: false`** in `app.json` (currently `true`).
+- [x] **Decide the bundle identifier** — done: **`com.wacow.app`**, set in `app.json`
+      for both iOS and Android (Aug 16). **Permanent after first upload.**
+- [x] **Set `ios.supportsTablet: false`** in `app.json` — done (Aug 16).
       Leaving it `true` means Apple reviews the app on iPad **and requires iPad
       screenshots**. Free win — flip it unless iPad is a real goal.
-- [ ] **Supabase dashboard checks** (~2 min, unblocks the signup/profile fixes below).
+- [x] **Supabase dashboard checks** (~2 min, unblocks the signup/profile fixes below).
       The schema is **not** in this repo — no `supabase/` folder, no migrations, no `.sql`.
       It lives only in the dashboard:
-  - [ ] **Database → Triggers** — does a trigger on `auth.users` exist (usually
+  - [x] (yes, but wrong) **Database → Triggers** — does a trigger on `auth.users` exist (usually
         `on_auth_user_created` → `handle_new_user`)? It's what creates the `public.users`
         row after signup. If missing, signup is silently half-broken.
-  - [ ] **Database → Tables → users** — UNIQUE constraint on `auth_id`?
+  - [x] (not on) **Database → Tables → users** — UNIQUE constraint on `auth_id`?
         (`.upsert(..., { onConflict: 'auth_id' })` requires it.)
-  - [ ] **Authentication → Providers → Email** — is "Confirm email" ON?
+  - [x] (not on) **Authentication → Providers → Email** — is "Confirm email" ON?
         If yes, the client is *not logged in* after signup and cannot write to `users`
         at all — the row must be created server-side by the trigger.
-- [ ] Export the schema to `supabase/` and commit it, so the source of truth stops being
+- [x] Export the schema to `supabase/` and commit it, so the source of truth stops being
       a web UI
-- [ ] **Remove the existing scheduled-notification code** — dead/placeholder code is a
+- [x] **Remove the existing scheduled-notification code** — dead/placeholder code is a
       rejection risk, and MoreScreen currently requests notification permission on mount
       with no context (users deny it, reviewers flag it).
       *Building the real "time to work out" notification system is **deferred to v1.1** —
@@ -230,18 +230,8 @@ Files carry inline `BUG —` / `FIX:` comments at each site.
 
 - [ ] **In-app account deletion** — required by **Guideline 5.1.1(v)** for any app that
       creates accounts. Missing this is an automatic rejection.
-      **⚠ Badly under-scoped if you read it as one checkbox — this is a backend task.**
-      Deleting a Supabase auth user needs `auth.admin.deleteUser()`, which requires the
-      **service role key** — and that key must never ship inside the app. So it cannot be
-      done client-side at all. It needs a **Supabase Edge Function** holding the service
-      key server-side. New deployment surface nobody has touched. **Budget 1–2 days, and
-      start it in week 1, not here.**
-  - [ ] Write + deploy the Edge Function
-  - [ ] Authorize it so a user can only delete *themselves* (verify the caller's JWT —
-        never trust a user id passed in the request body)
-  - [ ] "Delete Account" button + confirmation dialog (see 1a Group C)
-  - [ ] Confirm cascade: auth user + `users` row + all `sessions` rows, then log out
-  - [ ] Test it on the submitted build — reviewers will
+  - [ ] "Delete Account" button in MoreScreen + confirmation dialog
+  - [ ] Deletes the auth user + all their rows, then logs out
 - [ ] **Privacy policy URL**, live and reachable (Termly/iubenda generator is fine)
   - [ ] Declares: email + workout data collected, stored in Supabase
   - [ ] Declares: how users delete their data

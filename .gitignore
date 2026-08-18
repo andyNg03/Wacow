@@ -43,3 +43,6 @@ yarn-error.*
 
 # personal notes
 NOTES.md
+
+# Supabase CLI bookkeeping (schema.sql itself IS committed)
+supabase/.temp/

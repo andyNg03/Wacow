@@ -1,5 +1,4 @@
 // MenuList — list of tappable menu rows with icons
-// onNotificationPress — function passed from MoreScreen to handle notification tap
 
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -34,19 +33,13 @@ function MenuItem({ label, icon, gradientColors, onPress }) {
     )
 }
 
-// onNotificationPress comes from MoreScreen
-// it gets passed to the Notifications row only
-export default function MenuList({ onNotificationPress }) {
+// All rows are placeholders for now — which ones survive is a
+// Phase 1a de-scope decision.
+export default function MenuList() {
     return (
         <View style={styles.container}>
             {menuItems.map((item, i) => (
-                <MenuItem
-                    key={i}
-                    {...item}
-                    // Only wire onPress for the Notifications row
-                    // all other rows are placeholders for now
-                    onPress={item.label === 'Notifications' ? onNotificationPress : null}
-                />
+                <MenuItem key={i} {...item} />
             ))}
         </View>
     )
