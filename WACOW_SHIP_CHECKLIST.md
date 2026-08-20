@@ -109,10 +109,10 @@ XP, badges, achievements, and the daily challenge were cut from v1 back in July:
 tables, RLS, and trigger logic are all deferred to v1.1. **There is nothing to wire them
 to.** Listing them as open choices invites someone to spend a week building the XP system.
 
-- [ ] HomeScreen — XP stat card, achievements card, badges row, DailyChallenge
-- [ ] StatsScreen — LatestAchievement
-- [ ] ProfileScreen — BadgesSection, level/XP bar *(or repoint the bar to streak)*
-- [ ] `SearchBar.js` is 0 bytes — delete
+- [x] HomeScreen — (Delete) XP stat card, achievements card, badges row, DailyChallenge
+- [x] StatsScreen — (Delete) LatestAchievement
+- [x] ProfileScreen — (Delete) BadgesSection, level/XP bar *(or repoint the bar to streak)*
+- [x] (Delete) `SearchBar.js` is 0 bytes — delete
 
 **Group B — genuine decisions. The data exists or is cheap; the team calls it.**
 
@@ -135,12 +135,16 @@ to.** Listing them as open choices invites someone to spend a week building the 
 | Help & Support | ☑ wire | New screen, two options: "Question" and "Report Issue" |
 | Share App | ☑ wire | Trivial — native `Share.share()`, no backend |
 | Rate Us | ☑ delete | No App Store link exists pre-launch — can't wire a link that doesn't exist yet |
-| About | ☑ wire | New screen: "WaCow 2026, co-founded by Jiaxiu Li, Andrew Nguyen, Zahi Ladhkan, and Tarun Kancharla" (alphabetical) — use `src/style/theme.js`, not hardcoded styles |
 
 **Group C — additions, not removals (tracked here so 1a is the single UI worklist)**
 
 - [ ] Add the **Delete Account** button to ProfileScreen/MoreScreen
       *(the button is trivial; the Edge Function behind it is not — see Phase 2)*
+- [ ] **(Toung)** Converge Home, Profile, and Stats into a single HomeScreen — after
+      the Group A deletions the three tabs look empty; merge their surviving content
+      into one screen. *Ripples to check when doing this: `TabNav.js` drops two tabs;
+      the three separate 1c wiring items below collapse into one; logout + Edit
+      Profile buttons (currently on ProfileScreen) need a new home*
 
 **Sweep**
 - [ ] Grep for remaining hardcoded module-level arrays feeding the UI and list them here
@@ -152,16 +156,19 @@ Found during the Aug 2026 code walkthrough. **One root cause runs through most o
 treated as "success"** — including when a write matched zero rows or the network died.
 Files carry inline `BUG —` / `FIX:` comments at each site.
 
-**Highest-value fix — do first, it closes three items at once:**
+**Highest-value fix — do first, it closes three items at once:** ✅ **done Aug 20,
+verified end-to-end** (throwaway signup → no error alert → `users` row landed with
+name + `profile_complete = false`). Also added the UNIQUE constraint on `users.auth_id`.
 
-- [ ] Create the signup trigger in the Supabase SQL editor so the `users` row is created
-      **server-side**, guaranteed, regardless of login state:
-      `handle_new_user()` with `security definer`, reading the name from
-      `new.raw_user_meta_data->>'name'`, fired `after insert on auth.users`
-- [ ] Pass the name into signup so the trigger can read it:
+- [x] ~~Create~~ Edit the signup trigger (it already existed, writing only
+      `auth_id` + `email`) so the `users` row is created **server-side**, guaranteed:
+      `handle_new_user()` (`security definer`) now also writes `name` from
+      `new.raw_user_meta_data->>'name'` and `profile_complete = false`
+- [x] Pass the name into signup so the trigger can read it:
       `supabase.auth.signUp({ email, password, options: { data: { name } } })`
-- [ ] Then delete the client-side `users` write in `AuthScreen` — it becomes dead code
-      *(this also fixes the ProfileSetupScreen wizard trap below)*
+- [x] Deleted the client-side `users` write in `AuthScreen` — dead code
+      *(this also fixes the ProfileSetupScreen wizard trap below; the "check your
+      email" alert went in with the same edit)*
 
 **App.js**
 - [ ] `checkProfile` destructures `error` and never reads it — a failed request sets
@@ -179,28 +186,46 @@ Files carry inline `BUG —` / `FIX:` comments at each site.
 - [x] ~~Signup writes the name with `.update()`, which only edits an existing row~~
       → changed to `.upsert()` with the result captured *(Aug 2026; superseded by the
       trigger fix above, which is the real solution)*
-- [ ] No "check your email" message when `data.session` is null after signup — the user
-      taps Sign Up, nothing visible happens, and they assume it failed
+- [x] No "check your email" message when `data.session` is null after signup — added
+      with the trigger fix (Aug 20). Moot while confirmation is OFF, but guards the
+      flow if it's ever turned on
 - [ ] No validation — empty email/password still fires a network request
 - [ ] `setLoading(false)` is not in a `finally`; a thrown error leaves the button stuck
       on "Loading..." forever
 - [ ] Hardcoded colors (`#ffffff`, `#e53935`) — project rule says use `src/style/theme.js`
 
 **ProfileSetupScreen.js**
-- [ ] `.update()` assumes the row exists → **the wizard trap**: zero rows edited returns
-      no error, `onComplete()` fires, `checkProfile` finds nothing, user is routed back
-      into the wizard permanently with no logout and no way out but reinstalling
+- [x] ~~`.update()` assumes the row exists → **the wizard trap**~~ — root cause closed
+      by the trigger fix (Aug 20): every account now gets its `users` row server-side,
+      so the update always has a row to hit. *Still worth reading the update's `error`
+      here when touching this file (general error-audit habit)*
 - [ ] No field validation — Next/Next/Complete with everything blank sets
       `profile_complete = true`; `parseInt('')` is `NaN`, which serializes to `null`
 - [ ] No escape hatch (no logout, no skip) — every failure here is terminal
+
+**WorkoutsScreen.js** *(found in the Aug 19 silent-failure sweep)*
+- [ ] 🔴 **Save silently skipped**: `getUserId()` (lines 47–57) discards `error` on both
+      calls; if either fails at mount, `userId` stays `null` and the save handler's
+      `if (userId && ...)` guard (line 113) skips the entire insert — **no alert, and the
+      user still sees the "All done!" success screen over a workout that was never saved.**
+      Same path fires if the `users` row is missing. Needs: surface the failure at mount,
+      block session start (or retry) until userId resolves
+- [ ] Save failure alerts but then wipes the results anyway (lines 128–139) — the one
+      call site that reads `error`, but after the alert the state resets and the workout
+      is unrecoverable. Keep results on failure + offer retry
+
+**ExercisePickerScreen.js / ProfileScreen.js** *(minor, same sweep)*
+- [ ] Picker fetch failure → alert, then a permanently empty list; add a retry path
+- [ ] `signOut()` result discarded — a failed logout does nothing visible; read the
+      error and alert
 
 **Auth flow, still open**
 - [ ] Password reset / "forgot password" flow — **Apple will test this.** Email/password
       auth with no recovery path is both a support disaster and a review risk
 - [ ] Decide email-confirmation handling: disable for v1 (recommended — no deep-link work),
       or implement the redirect. Default settings dead-end mobile signups
-- [ ] Audit remaining silent-failure spots — anywhere `error` is destructured and unused,
-      or a call's result is discarded entirely
+- [x] ~~Audit remaining silent-failure spots~~ — done Aug 19: every Supabase call site
+      in the app is now audited; findings recorded above
 
 ### 1c. Wire the screens to real data
 

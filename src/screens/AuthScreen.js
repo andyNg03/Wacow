@@ -31,39 +31,30 @@ export default function AuthScreen() {
             if (error) Alert.alert('Error', error.message)
 
         } else {
-            // SIGNUP is TWO separate operations.
+            // SIGNUP is now ONE client operation. The `users` profile row is
+            // created server-side by a database trigger (handle_new_user) the
+            // moment the account lands in auth.users. The name rides along
+            // inside options.data — a free-form metadata pouch stored on the
+            // account itself — and the trigger reads it back out.
             //
-            // (1) Create the ACCOUNT. An account holds an email and a password
-            //     and nothing else — there is no slot for a name.
-            const { data, error } = await supabase.auth.signUp({ email, password })
+            // Why server-side: the phone may not even be logged in right
+            // after signUp (if email confirmation is ever turned on), and RLS
+            // has no INSERT policy on `users` — the client is not allowed to
+            // create profile rows at all. The trigger runs inside the
+            // database, so none of that can block it.
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { name } },
+            })
             if (error) {
                 Alert.alert('Error', error.message)
-            } else {
-                // (2) Put the name in OUR `users` table, which is a completely
-                //     separate table from the account list.
-                //
-                //     Account          = the key card to the building.
-                //     `users` row      = the employee file (name, age, weight).
-                //     Making a key card does not create an employee file.
-                //
-                // The old code used .update(), which only EDITS a row that
-                // already exists — it never creates one. If the row wasn't
-                // there, it edited zero rows and reported no error, because
-                // "changed nothing" is a successful write in Postgres. The
-                // name vanished with no alert, no crash, no log.
-                //
-                // .upsert() = edit the row, or create it if it's missing.
-                // And we now capture the result so a no-op can't pass as success.
-                //
-                // NOTE: upsert needs a UNIQUE constraint on users.auth_id.
-                // Verify in the Supabase dashboard (Database -> Tables -> users);
-                // without it this call errors instead of silently doing nothing —
-                // which is still an improvement, but check it.
-                const { error: profileError } = await supabase // tells supabase to return any errors
-                    .from('users')
-                    .upsert({ auth_id: data.user.id, name }, { onConflict: 'auth_id' })
-                
-                if (profileError) Alert.alert('Error', profileError.message)
+            } else if (!data.session) {
+                // No session = email confirmation is on (OFF today, but this
+                // guards the flow if the team ever flips it): account created,
+                // not logged in. Without this alert the button just... stops.
+                Alert.alert('Check your email',
+                    'We sent you a confirmation link. Tap it, then come back and log in.')
             }
         }
 
