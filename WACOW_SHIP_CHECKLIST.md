@@ -204,9 +204,12 @@ flash; airplane-mode cold start shows retry screen instead of the wizard)
       by the trigger fix (Aug 20): every account now gets its `users` row server-side,
       so the update always has a row to hit. *Still worth reading the update's `error`
       here when touching this file (general error-audit habit)*
-- [ ] No field validation — Next/Next/Complete with everything blank sets
-      `profile_complete = true`; `parseInt('')` is `NaN`, which serializes to `null`
-- [ ] No escape hatch (no logout, no skip) — every failure here is terminal
+- [x] Field validation added (Aug 21, verified on device): per-step checks gate
+      Next, Complete re-checks all steps and jumps to the offending one; ranges
+      age 13–120, height 50–300 cm, weight 20–500 kg. Save wrapped in
+      `try/finally` so the button can't stick on "Saving..."
+- [x] Escape hatch added (Aug 21): "Log out" button in the wizard header —
+      `signOut()` with the error read; App.js's gate routes to AuthScreen
 
 **WorkoutsScreen.js** *(found in the Aug 19 silent-failure sweep)* — **both fixed
 Aug 21, verified on device** (airplane-mode save → alert with results kept → retry
