@@ -175,17 +175,17 @@ name + `profile_complete = false`). Also added the UNIQUE constraint on `users.a
       *(this also fixes the ProfileSetupScreen wizard trap below; the "check your
       email" alert went in with the same edit)*
 
-**App.js**
-- [ ] `checkProfile` destructures `error` and never reads it — a failed request sets
-      `profileComplete = false`, dumping an onboarded user into the setup wizard where
-      they can overwrite their real profile. Needs three states: loading / ready / error
-- [ ] No loading state — `session` starts `null` and `getSession()` is async, so
-      AuthScreen (then ProfileSetupScreen) flash on every cold start.
-      `// null = loading` was never implemented: `!null === !false`
-- [ ] `onAuthStateChange` subscription is never unsubscribed
-- [ ] `checkProfile` re-runs on every hourly token refresh — Supabase returns a new
-      session *object*, so the `[session]` dependency sees a change that isn't one
-- [ ] Unused `HomeScreen` import on line 1
+**App.js** — **all five fixed Aug 21, verified on device** (cold-start spinner, no
+flash; airplane-mode cold start shows retry screen instead of the wizard)
+- [x] `checkProfile` three states: `profileStatus` loading/ready/error; genuine
+      no-row (`PGRST116`) routes to the wizard, any other error shows a retry
+      screen instead of routing on a guess
+- [x] Loading state: `authReady` flag + spinner until `getSession()` answers —
+      no screen flash on cold start
+- [x] `onAuthStateChange` subscription unsubscribed via effect cleanup
+- [x] Hourly re-run fixed: effect depends on `session?.user?.id` (string), not
+      the session object
+- [x] Unused `HomeScreen` import removed
 
 **AuthScreen.js**
 - [x] ~~Signup writes the name with `.update()`, which only edits an existing row~~
