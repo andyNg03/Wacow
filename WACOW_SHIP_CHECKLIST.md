@@ -148,6 +148,11 @@ to.** Listing them as open choices invites someone to spend a week building the 
 
 **Sweep**
 - [ ] Grep for remaining hardcoded module-level arrays feeding the UI and list them here
+- [ ] `ResultsOverlay.js:29` — hardcoded `currentStreak = 8` shows every user an
+      8-day streak after every workout *(found Aug 21; missed by the Group A pass,
+      which only swept the four main screens)*. Wire it to the real streak — the
+      HomeScreen 1c work computes the same number, so reuse that — or hide the
+      streak card for v1
 
 ### 1b. Bug fixes
 
@@ -203,16 +208,16 @@ name + `profile_complete = false`). Also added the UNIQUE constraint on `users.a
       `profile_complete = true`; `parseInt('')` is `NaN`, which serializes to `null`
 - [ ] No escape hatch (no logout, no skip) — every failure here is terminal
 
-**WorkoutsScreen.js** *(found in the Aug 19 silent-failure sweep)*
-- [ ] 🔴 **Save silently skipped**: `getUserId()` (lines 47–57) discards `error` on both
-      calls; if either fails at mount, `userId` stays `null` and the save handler's
-      `if (userId && ...)` guard (line 113) skips the entire insert — **no alert, and the
-      user still sees the "All done!" success screen over a workout that was never saved.**
-      Same path fires if the `users` row is missing. Needs: surface the failure at mount,
-      block session start (or retry) until userId resolves
-- [ ] Save failure alerts but then wipes the results anyway (lines 128–139) — the one
-      call site that reads `error`, but after the alert the state resets and the workout
-      is unrecoverable. Keep results on failure + offer retry
+**WorkoutsScreen.js** *(found in the Aug 19 silent-failure sweep)* — **both fixed
+Aug 21, verified on device** (airplane-mode save → alert with results kept → retry
+with signal → saved; cold-start offline → retry gate blocks session start)
+- [x] 🔴 **Save silently skipped**: `getUserId()` discarded `error` on both calls;
+      `userId` stayed `null` and the save was skipped behind a success screen.
+      Fixed: errors read, `userIdStatus` loading/ready/error, picker shows a
+      retry gate on error, save does a last-chance id re-fetch
+- [x] Save failure alerted but wiped the results anyway. Fixed: session state is
+      only cleared by `finishSession()`, reached solely via successful insert or
+      an explicit "Discard workout" tap — overlay and results survive failures
 
 **ExercisePickerScreen.js / ProfileScreen.js** *(minor, same sweep)*
 - [ ] Picker fetch failure → alert, then a permanently empty list; add a retry path
@@ -399,6 +404,11 @@ Deferred, not cancelled. Revisit after App Store v1 is stable.
   scheduling, timezone handling, Apple purpose strings, testing across app states.
   Deliberately deferred; better built once there are real users to time it against.
   The *existing* broken scheduled-notification code is removed in Day 1.
+- **Offline session queue** — persist unsaved workout results to device storage and
+  sync when connectivity returns (survives app restarts; needs dedup + a decision on
+  what date a late-synced session counts toward, since streaks care). The v1 fix only
+  keeps results in memory until save succeeds — good for network blips, not for
+  app-killed-mid-workout
 - Pull-to-refresh, tab/overlay animations
 - AsyncStorage → SecureStore migration
 - Settings screen, help & support, rate-us prompt
