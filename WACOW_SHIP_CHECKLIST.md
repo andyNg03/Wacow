@@ -149,7 +149,23 @@ to.** Listing them as open choices invites someone to spend a week building the 
       Profile buttons (currently on ProfileScreen) need a new home*
 
 **Sweep**
-- [ ] Grep for remaining hardcoded module-level arrays feeding the UI and list them here
+- [x] Grep for remaining hardcoded module-level arrays feeding the UI — done Aug 21.
+      **Fake data still rendered (this is tomorrow's wiring worklist, all 1c):**
+  - `HomeScreen.js:9-10` — `dayStreak = 9`, `workouts = 25`
+  - `ProfileScreen.js:12-14` — `workouts = 54`, `daysActive = 12`, `personalInfo`
+    array ("Member Since January 2026", "Favorite Workout Bench Press",
+    "Weekly Goal 5 workouts")
+  - `StatsScreen.js:10-26` — `workouts = 26`, `activeTime = 12`, `weeklyData`
+    array (the chart's bars), `goal = 20`, `progress = 12`, and `calories = 2520`
+    *(calories is a decided DELETE — remove with the wiring pass)*
+  - `ResultsOverlay.js:29` — `currentStreak = 8` *(already tracked above)*
+  - `HeroCard.js:12` — "Hey Champion!" is generic, not fake; personalizing it is
+    the Group B greeting decision
+      **Orphaned, not rendered since the Group A pass (no rejection risk):**
+  - `BadgesSection.js:9` `badges` array — component is unreferenced, as are
+    `BadgeCard`, `LatestAchievement`, `DailyChallenge` (kept for v1.1)
+      **Legit constants, not fake data (leave alone):** `MUSCLE_GROUPS`,
+      `CARD_COLORS`, `menuItems`, `BOX_CONFIGS`, `CHART_HEIGHT`
 - [ ] `ResultsOverlay.js:29` — hardcoded `currentStreak = 8` shows every user an
       8-day streak after every workout *(found Aug 21; missed by the Group A pass,
       which only swept the four main screens)*. Wire it to the real streak — the
