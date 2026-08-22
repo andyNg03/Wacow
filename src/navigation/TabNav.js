@@ -1,5 +1,6 @@
 // Navigation for main bottom tab
-// 5 tabs: Home, Workout, Stats, Profile, More
+// 3 tabs: Home, Workout, Profile
+// Home also carries the stats content; Profile carries the app info/menu
 // Each tab has an Ionicons icon that turns red when active
 
 // imports
@@ -7,9 +8,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons'
 import HomeScreen from '../screens/HomeScreen'
 import WorkoutScreen from '../screens/WorkoutsScreen'
-import StatsScreen from '../screens/StatsScreen'
 import ProfileScreen from '../screens/ProfileScreen'
-import MoreScreen from '../screens/MoreScreen'
 import { colors } from '../style/theme'
 
 // in C++, it's like creating a const pointer
@@ -21,9 +20,7 @@ const Tab = createBottomTabNavigator()
 const TAB_ICONS = {
     Home:    'home',
     Workout: 'barbell',
-    Stats:   'stats-chart',
     Profile: 'person',
-    More:    'ellipsis-horizontal',
 }
 
 export default function TabNavigator() {
@@ -56,9 +53,7 @@ export default function TabNavigator() {
             and component is the screen you're putting into the navigator */}
             <Tab.Screen name="Home"    component={HomeScreen} />
             <Tab.Screen name="Workout" component={WorkoutScreen} />
-            <Tab.Screen name="Stats"   component={StatsScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
-            <Tab.Screen name="More"    component={MoreScreen} />
         </Tab.Navigator>
     )
 }
