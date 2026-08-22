@@ -260,11 +260,16 @@ Aug 21, verified on device**
 
 ### Row Level Security (BLOCKING — the anon key ships inside the app)
 
-- [ ] RLS policy on `users` (read own row, update own row)
-- [ ] RLS policy on `sessions` (read own, insert own, update own, delete own)
-- [ ] RLS policy on `workouts` (read all presets, read/write own custom)
-- [ ] Test with `curl` using the anon key while logged out → confirm zero access to
-      user data
+- [x] RLS policy on `users` (read own row, update own row) — *already existed;
+      verified against the Aug 15 schema dump. No INSERT policy, by design: the
+      signup trigger owns row creation*
+- [x] RLS policy on `sessions` (read own, insert own, update own, delete own) —
+      *already existed; verified in dump*
+- [x] RLS policy on `workouts` (read all presets, read/write own custom) —
+      *already existed; verified in dump*
+- [x] `curl` test with the anon key, logged out — **passed Aug 21**: `users` → `[]`,
+      `sessions` → `[]`, `workouts` → presets only (public by design), INSERT into
+      `sessions` → `42501` RLS rejection. Zero user data reachable
 
 ### Apple-required, non-negotiable
 
@@ -393,6 +398,7 @@ Skip it and you submit a binary nobody has ever run in its final form.
 
 Deferred, not cancelled. Revisit after App Store v1 is stable.
 
+
 - [ ] Recruit 12+ testers, **or** register an **organization** Play account — org accounts
       are exempt from the 12-tester/14-day closed-test rule. That exemption is the whole
       reason to consider an org account.
@@ -403,13 +409,14 @@ Deferred, not cancelled. Revisit after App Store v1 is stable.
 - [ ] Android 13+ POST_NOTIFICATIONS runtime permission
 - [ ] Verify `elevation` vs iOS `shadow*` styling renders correctly on Android
 - [ ] Privacy policy + account deletion already exist from the App Store launch — reuse
-
 ---
 
 ## v1.1 backlog (cut from v1 — don't lose these)
 
+- [ ] Images and Aesthetics for Cal
 - XP system, badges, achievements (+ their tables, RLS, trigger logic)
 - Daily challenge
+- [ ] Saving Pre-set workouts
 - **Workout reminder notifications** ("time to start a session") — 2–4 days: permissions,
   scheduling, timezone handling, Apple purpose strings, testing across app states.
   Deliberately deferred; better built once there are real users to time it against.
