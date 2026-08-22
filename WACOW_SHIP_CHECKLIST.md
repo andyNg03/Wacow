@@ -194,10 +194,14 @@ flash; airplane-mode cold start shows retry screen instead of the wizard)
 - [x] No "check your email" message when `data.session` is null after signup — added
       with the trigger fix (Aug 20). Moot while confirmation is OFF, but guards the
       flow if it's ever turned on
-- [ ] No validation — empty email/password still fires a network request
-- [ ] `setLoading(false)` is not in a `finally`; a thrown error leaves the button stuck
-      on "Loading..." forever
-- [ ] Hardcoded colors (`#ffffff`, `#e53935`) — project rule says use `src/style/theme.js`
+- [x] Validation added (Aug 21, verified): mode-aware checks before any network
+      call — name required (trimmed) on signup, email format, password ≥ 6
+      (Supabase's own minimum). Also closes the nameless-signup hole that would
+      have re-introduced blank names past the trigger fix
+- [x] `setLoading(false)` moved into `finally` — button can't stick on "Loading..."
+- [x] Hardcoded colors → theme roles (13 swaps). Note: the old `#e53935` wasn't
+      even the brand red — theme `primary` is `#D00000`; the login screen now
+      matches the rest of the app
 
 **ProfileSetupScreen.js**
 - [x] ~~`.update()` assumes the row exists → **the wizard trap**~~ — root cause closed
@@ -230,7 +234,7 @@ with signal → saved; cold-start offline → retry gate blocks session start)
 **Auth flow, still open**
 - [ ] Password reset / "forgot password" flow — **Apple will test this.** Email/password
       auth with no recovery path is both a support disaster and a review risk
-- [ ] Decide email-confirmation handling: disable for v1 (recommended — no deep-link work),
+- [x] (Off for V1) Decide email-confirmation handling: disable for v1 (recommended — no deep-link work),
       or implement the redirect. Default settings dead-end mobile signups
 - [x] ~~Audit remaining silent-failure spots~~ — done Aug 19: every Supabase call site
       in the app is now audited; findings recorded above
@@ -417,6 +421,7 @@ Deferred, not cancelled. Revisit after App Store v1 is stable.
 - Settings screen, help & support, rate-us prompt
 - Dedicated analytics (App Store Connect + Supabase dashboard is enough at this scale)
 - iPad support
+- Email confirmation on
 
 ---
 
