@@ -35,13 +35,6 @@ export default function ProfileScreen() {
             {/* Personal info rows */}
             <PersonalInfo data={personalInfo} />
 
-            {/* Edit profile button — red with gear icon */}
-            <View style={styles.editShadow}>
-                <TouchableOpacity style={styles.editButton}>
-                    <Text style={styles.editButtonText}>Delete Profile</Text>
-                </TouchableOpacity>
-            </View>
-
             {/* Logout button — white with red border */}
             <View style={styles.logoutShadow}>
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -57,31 +50,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.backgroundTint,
         padding: spacing.md,
-    },
-    // Hard shadow wrapper for edit button
-    editShadow: {
-        backgroundColor: colors.border,
-        borderRadius: borders.standard.borderRadius,
-        marginVertical: spacing.sm,
-        transform: [{ translateX: 4 }, { translateY: 4 }],
-    },
-    editButton: {
-        backgroundColor: colors.primary,
-        borderRadius: borders.standard.borderRadius,
-        borderWidth: borders.standard.borderWidth,
-        borderColor: colors.border,
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing.sm,
-        transform: [{ translateX: -4 }, { translateY: -4 }],
-    },
-    editButtonText: {
-        ...typography.body,
-        color: colors.textLight,
-        fontSize: 18,
     },
     // Hard shadow wrapper for logout button
     logoutShadow: {

@@ -12,6 +12,9 @@ const menuItems = [
     { label: 'Share App',      icon: 'share-social-outline',       gradientColors: [colors.achievementCard, '#111827'] },
     { label: 'Rate Us',        icon: 'star-outline',               gradientColors: ['#F5A623', '#F97316'] },
     { label: 'About',          icon: 'information-circle-outline', gradientColors: [colors.primary, '#b91c1c'] },
+    // Destructive action last by convention. Placeholder until the Phase 2
+    // account-deletion Edge Function exists to wire it to.
+    { label: 'Delete Account', icon: 'trash-outline',              gradientColors: [colors.achievementCard, '#111827'] },
 ]
 
 // TouchableOpacity is the outermost wrapper so nothing blocks the tap

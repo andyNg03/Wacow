@@ -124,7 +124,7 @@ to.** Listing them as open choices invites someone to spend a week building the 
 | StatsScreen "This week" / "Activity This Week" (workouts, active time) | computable from `sessions`; no existing query pattern in the repo yet, new aggregation logic | ☑ wire |
 | StatsScreen "calories" stat | no calories column exists anywhere in the `sessions` insert shape — nothing to wire | ☑ delete |
 | Monthly goal | `users.weekly_goal` value is trivial; "progress" rides on the same `sessions` aggregation as the week stats above | ☑ wire |
-| Edit Profile button | reuses ProfileSetupScreen — **must add pre-fill of existing values first**, or opening it blanks out a user's real profile | ☑ wire |
+| Edit Profile button | reuses ProfileSetupScreen — **must add pre-fill of existing values first**, or opening it blanks out a user's real profile | ⚠ **flipped Aug 21 (Andy):** button removed — repurposed as the Delete Profile row in MoreScreen. **Flag to team: this reverses the Aug 14 "wire" decision**; if Edit Profile is still wanted, it needs a new home |
 | `ProfileHeader.js:32` hardcoded `"Gym Hero"` | same pattern as greetings card | ☑ wire |
 
 **MoreScreen placeholder menu items** — decided per row, not as one item:
@@ -138,8 +138,10 @@ to.** Listing them as open choices invites someone to spend a week building the 
 
 **Group C — additions, not removals (tracked here so 1a is the single UI worklist)**
 
-- [ ] Add the **Delete Account** button to ProfileScreen/MoreScreen
-      *(the button is trivial; the Edge Function behind it is not — see Phase 2)*
+- [x] Add the delete button — done Aug 21: **"Delete Account"** row in MoreScreen
+      (Share App's gradient, trash icon, listed last; named to match Apple's
+      5.1.1(v) language). **Still a placeholder** — wiring waits on the Phase 2
+      Edge Function
 - [ ] **(Toung)** Converge Home, Profile, and Stats into a single HomeScreen — after
       the Group A deletions the three tabs look empty; merge their surviving content
       into one screen. *Ripples to check when doing this: `TabNav.js` drops two tabs;
