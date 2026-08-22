@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, StyleSheet, Text, TextInput, TouchableOpacity, Alert } from 'react-native'
 import { supabase } from '../lib/supabase'
+import { colors } from '../style/theme'
 
 // ONE JOB: ask 5 questions across 3 steps, save them once, tell App.js it's done.
 //
@@ -46,45 +47,92 @@ export default function ProfileSetupScreen({ session, onComplete }) {
     // loading, nothing could be clicked until loading is false
     const [loading, setLoading] = useState(false)
 
+    // ─── Validation ───────────────────────────────────────────
+    // One rulebook for the whole wizard. Returns the problem as a string,
+    // or null if the step is clean. parseInt('') is NaN, and NaN fails
+    // every < > comparison — so blank fields fail these checks naturally.
+    const stepError = (s) => {
+        if (s === 1) {
+            if (!sex) return 'Select your sex to continue.'
+            const a = parseInt(age)
+            if (isNaN(a) || a < 13 || a > 120) return 'Enter an age between 13 and 120.'
+        }
+        if (s === 2) {
+            const h = parseInt(height)
+            if (isNaN(h) || h < 50 || h > 300) return 'Enter a height between 50 and 300 cm.'
+            const w = parseInt(weight)
+            if (isNaN(w) || w < 20 || w > 500) return 'Enter a weight between 20 and 500 kg.'
+        }
+        if (s === 3) {
+            if (!goal) return 'Pick a goal to finish.'
+        }
+        return null
+    }
+
+    // Next only advances past a clean step. An alert that SAYS what's
+    // missing beats a silently disabled button.
+    const handleNext = () => {
+        const problem = stepError(step)
+        if (problem) {
+            Alert.alert('Almost there', problem)
+            return
+        }
+        setStep(step + 1)
+    }
+
     // ─── THE SAVE ─────────────────────────────────────────────
     // The only function in this file that talks to the database.
     // Everything below the return is layout.
     // Wired to the Complete button on step 3 (onPress={handleComplete}).
     const handleComplete = async () => {
+        // Re-check EVERY step, not just this one — the user can go Back,
+        // blank a field, and land here again. On a violation, jump them
+        // to the offending step with the alert.
+        for (const s of [1, 2, 3]) {
+            const problem = stepError(s)
+            if (problem) {
+                Alert.alert('Almost there', problem)
+                setStep(s)
+                return
+            }
+        }
+
         setLoading(true)
+        try {
+            // One write does everything, including flipping profile_complete
+            // to true. The row is guaranteed to exist — the signup trigger
+            // creates it — so .update() always has something to hit.
+            // The goal STRING becomes a NUMBER on the way in:
+            //   Lose Weight -> 5 days/week, Build Muscle -> 4, Stay Fit -> 3
+            const { error } = await supabase
+                .from('users')
+                .update({
+                    sex,
+                    age: parseInt(age),
+                    height: parseInt(height),
+                    weight: parseInt(weight),
+                    weekly_goal: goal === 'Lose Weight' ? 5 : goal === 'Build Muscle' ? 4 : 3,
+                    profile_complete: true,
+                })
+                .eq('auth_id', session.user.id)
 
-        // One write does everything, including flipping profile_complete to true.
-        // The goal STRING becomes a NUMBER on the way in:
-        //   Lose Weight -> 5 days/week, Build Muscle -> 4, anything else -> 3
-        const { error } = await supabase
-            .from('users')
-            .update({
-                sex,
-                age: parseInt(age),
-                height: parseInt(height),
-                weight: parseInt(weight),
-                weekly_goal: goal === 'Lose Weight' ? 5 : goal === 'Build Muscle' ? 4 : 3,
-                profile_complete: true,
-            })
-            .eq('auth_id', session.user.id)
+            if (error) Alert.alert('Error', error.message)
+            else if (onComplete) onComplete()   // hands control back up to App.js
+        } finally {
+            // finally = runs on success, error, OR throw — the button can
+            // never stick at "Saving...".
+            setLoading(false)
+        }
+    }
 
-        // BUG — THE WIZARD TRAP.
-        // .update() only edits a row that ALREADY EXISTS. If the row is missing,
-        // it edits zero rows and reports NO error, because "changed nothing" is a
-        // successful write in Postgres. Then:
-        //
-        //   onComplete() fires -> checkProfile() finds no row -> profileComplete
-        //   = false -> App.js routes the user straight back HERE. Forever.
-        //
-        // No logout on this screen, no skip. Reinstalling is the only way out.
-        // FIX: the signup trigger (creates the row server-side). See the checklist.
-        //
-        // BUG — no validation. Next / Next / tap a goal / Complete works with every
-        // field blank. parseInt('') is NaN, which serializes to null. The profile is
-        // marked complete over empty data and the user never sees this screen again.
+    // ─── The escape hatch ─────────────────────────────────────
+    // This screen used to be a room with no door: no logout, no skip. Any
+    // failure marooned the user permanently. Log out changes the session
+    // fact; App.js's gate sees it vanish and routes to AuthScreen — this
+    // screen never navigates, same as always.
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut()
         if (error) Alert.alert('Error', error.message)
-        else if (onComplete) onComplete()   // hands control back up to App.js
-        setLoading(false)
     }
 
     // What onComplete() sets off, end to end:
@@ -110,6 +158,9 @@ export default function ProfileSetupScreen({ session, onComplete }) {
                     <Text style={styles.headerTitle}>Profile Setup</Text>
                     <Text style={styles.headerSub}>Step {step} of 3</Text>
                 </View>
+                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                    <Text style={styles.logoutText}>Log out</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Progress bar — width is computed straight from `step`.
@@ -217,9 +268,7 @@ export default function ProfileSetupScreen({ session, onComplete }) {
 
             {/* Navigation buttons — all three conditions read `step`.
                 Back only from step 2 onward; Next until step 3; then Complete.
-
-                BUG — no escape hatch. No logout, no skip, no back-to-login.
-                Combined with the wizard trap above, every failure here is terminal. */}
+                Back skips validation on purpose: retreating is always allowed. */}
             <View style={styles.navRow}>
                 {step > 1 && (
                     <TouchableOpacity style={styles.backBtn} onPress={() => setStep(step - 1)}>
@@ -229,7 +278,7 @@ export default function ProfileSetupScreen({ session, onComplete }) {
                 {step < 3 ? (
                     <TouchableOpacity
                         style={[styles.nextBtn, step === 1 && { flex: 1 }]}
-                        onPress={() => setStep(step + 1)}>
+                        onPress={handleNext}>
                         <Text style={styles.nextText}>Next</Text>
                     </TouchableOpacity>
                 ) : (
@@ -352,4 +401,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     nextText: { fontWeight: '700', fontSize: 16, color: '#555' },
+    logoutBtn: {
+        marginLeft: 'auto',     // pushes itself to the header's right edge
+        padding: 8,             // bigger tap target than the text alone
+    },
+    logoutText: {
+        fontWeight: '700',
+        color: colors.primary,
+    },
 })
