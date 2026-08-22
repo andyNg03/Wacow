@@ -1,5 +1,15 @@
 import { useState } from 'react'
-import { View, StyleSheet, Text, TextInput, TouchableOpacity, Alert } from 'react-native'
+import {
+    View,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    Alert,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+} from 'react-native'
 import { supabase } from '../lib/supabase'
 
 // ONE JOB: ask 5 questions across 3 steps, save them once, tell App.js it's done.
@@ -99,8 +109,29 @@ export default function ProfileSetupScreen({ session, onComplete }) {
     // NOTE this screen never navigates anywhere. Same as AuthScreen: it changes a
     // fact, and the gate in App.js re-evaluates. That's the good part of the design.
 
+    // KEYBOARD HANDLING — the age/height/weight fields use the numeric keypad,
+    // and on iOS that keypad has NO return key. Without the three pieces below
+    // there is no way to close it, and it sits on top of the Next button:
+    //
+    //   KeyboardAvoidingView      lifts the content instead of letting the
+    //                             keyboard cover it
+    //   ScrollView                lets you reach anything the keyboard hides
+    //   keyboardShouldPersistTaps tap Next while the keypad is open and the
+    //     ="handled"              button fires; without it the first tap is
+    //                             swallowed as "just dismiss the keyboard"
+    //
+    // navRow stays OUTSIDE the ScrollView so it stays pinned to the bottom.
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+        <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+        >
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerIcon}>
@@ -214,6 +245,7 @@ export default function ProfileSetupScreen({ session, onComplete }) {
                     ))}
                 </View>
             )}
+        </ScrollView>
 
             {/* Navigation buttons — all three conditions read `step`.
                 Back only from step 2 onward; Next until step 3; then Complete.
@@ -238,7 +270,7 @@ export default function ProfileSetupScreen({ session, onComplete }) {
                     </TouchableOpacity>
                 )}
             </View>
-        </View>
+        </KeyboardAvoidingView>
     )
 }
 
@@ -280,6 +312,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#e53935',
         borderRadius: 4,
     },
+    // flexGrow (not flex) — a ScrollView's content container needs to be
+    // allowed to grow past the screen, which is what makes the fields
+    // reachable once the keyboard is covering the lower half
+    scrollContent: { flexGrow: 1 },
     stepContainer: { flex: 1 },
     banner: {
         backgroundColor: '#e53935',
