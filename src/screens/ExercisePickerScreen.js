@@ -18,6 +18,7 @@ export default function ExercisePickerScreen({ onStartSession }) {
     const [selectedFilter, setSelectedFilter] = useState('All')
     const [selectedExercises, setSelectedExercises] = useState([])
     const [loading, setLoading] = useState(true)
+    const [fetchFailed, setFetchFailed] = useState(false)
 
     // Fetch all preset workouts from Supabase on mount
     useEffect(() => {
@@ -26,6 +27,7 @@ export default function ExercisePickerScreen({ onStartSession }) {
 
     const fetchExercises = async () => {
         setLoading(true)
+        setFetchFailed(false)
         const { data, error } = await supabase
             .from('workouts')
             .select('*')
@@ -33,7 +35,7 @@ export default function ExercisePickerScreen({ onStartSession }) {
             .order('type')
             .order('name')
 
-        if (error) Alert.alert('Error', error.message)
+        if (error) setFetchFailed(true)   // inline retry UI below handles it
         else setExercises(data)
         setLoading(false)
     }
@@ -124,6 +126,15 @@ export default function ExercisePickerScreen({ onStartSession }) {
             <ScrollView style={styles.list}>
                 {loading ? (
                     <Text style={styles.loadingText}>Loading exercises...</Text>
+                ) : fetchFailed ? (
+                    <View style={styles.errorBox}>
+                        <Text style={styles.loadingText}>
+                            Can't reach the server. Check your connection.
+                        </Text>
+                        <TouchableOpacity style={styles.retryBtn} onPress={fetchExercises}>
+                            <Text style={styles.retryText}>Retry</Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : filteredExercises.length === 0 ? (
                     <Text style={styles.loadingText}>No exercises found</Text>
                 ) : (
@@ -316,5 +327,22 @@ const styles = StyleSheet.create({
         color: colors.textLight,
         fontSize: 18,
         fontWeight: '900',
+    },
+    errorBox: {
+        alignItems: 'center',
+    },
+    retryBtn: {
+        marginTop: spacing.md,
+        backgroundColor: colors.primary,
+        borderRadius: borders.small.borderRadius,
+        borderWidth: 2,
+        borderColor: colors.border,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
+    },
+    retryText: {
+        color: colors.textLight,
+        fontWeight: '900',
+        fontSize: 16,
     },
 })

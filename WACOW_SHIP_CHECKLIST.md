@@ -226,10 +226,11 @@ with signal → saved; cold-start offline → retry gate blocks session start)
       only cleared by `finishSession()`, reached solely via successful insert or
       an explicit "Discard workout" tap — overlay and results survive failures
 
-**ExercisePickerScreen.js / ProfileScreen.js** *(minor, same sweep)*
-- [ ] Picker fetch failure → alert, then a permanently empty list; add a retry path
-- [ ] `signOut()` result discarded — a failed logout does nothing visible; read the
-      error and alert
+**ExercisePickerScreen.js / ProfileScreen.js** *(minor, same sweep)* — **both fixed
+Aug 21, verified on device**
+- [x] Picker fetch failure now shows an inline "can't reach the server" + Retry
+      in the list area (alert removed — it just dead-ended into an empty list)
+- [x] `signOut()` error read and alerted in ProfileScreen's logout
 
 **Auth flow, still open**
 - [ ] Password reset / "forgot password" flow — **Apple will test this.** Email/password
