@@ -142,11 +142,20 @@ to.** Listing them as open choices invites someone to spend a week building the 
       (Share App's gradient, trash icon, listed last; named to match Apple's
       5.1.1(v) language). **Still a placeholder** — wiring waits on the Phase 2
       Edge Function
-- [ ] **(Toung)** Converge Home, Profile, and Stats into a single HomeScreen — after
-      the Group A deletions the three tabs look empty; merge their surviving content
-      into one screen. *Ripples to check when doing this: `TabNav.js` drops two tabs;
-      the three separate 1c wiring items below collapse into one; logout + Edit
-      Profile buttons (currently on ProfileScreen) need a new home*
+- [x] **(Tuong)** Converge screens — **done Aug 23 (PR #4), as-built differs from
+      the original plan:** Stats merged into Home (goal → stat cards → week summary →
+      chart → new Recent Workouts list), More merged into Profile, **Profile kept as
+      its own tab** — 3 tabs total (Home, Workout, Profile). MoreScreen deleted;
+      Delete Account row survives via MenuList on Profile. PR also fixed the SDK 54
+      dependency set (expo-notifications removed — it was breaking launches).
+      **Follow-ups from the merged-without-review PR:**
+  - [ ] Device pass on merged main — the combined wizard (validation + keyboard),
+        Profile's new layout, and Recent Workouts below the fold were never
+        visually verified together
+  - [ ] Strip calories (a decided DELETE, nothing to wire it to) from HomeScreen's
+        WeekSummary + Recent Workouts during the 1c wiring pass
+  - [ ] `StatsScreen.js` is now an orphan on main — delete or mark
+        kept-for-reference
 
 **Sweep**
 - [x] Grep for remaining hardcoded module-level arrays feeding the UI — done Aug 21.
@@ -260,15 +269,20 @@ Aug 21, verified on device**
 
 ### 1c. Wire the screens to real data
 
-- [ ] **HomeScreen** — streak computed from `sessions` (consecutive days, midnight
-      rollover in the user's timezone; keep the logic in one place, recommend a Postgres
-      function/view); workout count from `sessions`; loading state; empty state for a
-      brand-new user
-- [ ] **WorkoutsScreen** — save already works; handle save failure (network down, RLS
-      reject) so a workout is never silently lost; trigger the streak update after save
-- [ ] **StatsScreen** — query the current week's sessions → weekly chart; totals from real
-      data; empty-data case
-- [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`; loading state
+*(Reshaped Aug 23 by the screen convergence — Stats' wiring now lives inside
+HomeScreen's item.)*
+
+- [ ] **HomeScreen (the dashboard)** — streak from `sessions` (consecutive days,
+      midnight rollover in the user's timezone; keep the logic in one place,
+      recommend a Postgres function/view); workout count from `sessions`; monthly
+      goal from `users.weekly_goal` + the same aggregation; this-week totals +
+      weekly chart from the current week's sessions; **Recent Workouts from
+      `sessions` newest-first (strip its fake calories)**; loading state; empty
+      state for a brand-new user
+- [ ] **WorkoutsScreen** — ~~save failure handling~~ done in 1b; trigger the streak
+      update after save
+- [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`;
+      loading state
 
 ---
 
@@ -317,7 +331,9 @@ surface something.
 - [ ] Bundle ID set to the final value
 - [ ] Signing certificates / provisioning handled by EAS (confirm the account is enrolled)
 - [ ] App icon and splash render correctly on device
-- [ ] Fix `expo-notifications` version mismatch (54 vs SDK 55.0.x)
+- [x] ~~Fix `expo-notifications` version mismatch~~ — resolved Aug 23 (PR #4):
+      package removed entirely; it was an SDK 55 package pulling a duplicate
+      `expo-constants` native module. `expo-doctor` 18/18
 - [ ] Audit `.env` — only `EXPO_PUBLIC_` keys in the app (anon key fine; **service role
       key NEVER**)
 - [ ] Separate production Supabase project from dev (don't ship test data)
