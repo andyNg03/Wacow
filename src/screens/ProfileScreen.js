@@ -1,8 +1,7 @@
 // Profile Screen — user header, stats, personal info, edit/logout buttons,
 // plus the app info and menu that used to live on the More tab
 
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import ProfileHeader from '../components/ProfileHeader'
 import StatsGrid from '../components/StatsGrid'
 import PersonalInfo from '../components/PersonalInfo'
@@ -24,7 +23,8 @@ let personalInfo = [
 export default function ProfileScreen() {
     // Signs the user out via Supabase auth
     const handleLogout = async () => {
-        await supabase.auth.signOut()
+        const { error } = await supabase.auth.signOut()
+        if (error) Alert.alert('Error', error.message)
     }
 
     return (
@@ -37,14 +37,6 @@ export default function ProfileScreen() {
 
             {/* Personal info rows */}
             <PersonalInfo data={personalInfo} />
-
-            {/* Edit profile button — red with gear icon */}
-            <View style={styles.editShadow}>
-                <TouchableOpacity style={styles.editButton}>
-                    <Ionicons name="settings-outline" size={20} color={colors.textLight} />
-                    <Text style={styles.editButtonText}>Edit Profile</Text>
-                </TouchableOpacity>
-            </View>
 
             {/* App info and menu — moved here from the old More tab */}
             <AppInfoCard />
@@ -67,31 +59,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.backgroundTint,
         padding: spacing.md,
-    },
-    // Hard shadow wrapper for edit button
-    editShadow: {
-        backgroundColor: colors.border,
-        borderRadius: borders.standard.borderRadius,
-        marginVertical: spacing.sm,
-        transform: [{ translateX: 4 }, { translateY: 4 }],
-    },
-    editButton: {
-        backgroundColor: colors.primary,
-        borderRadius: borders.standard.borderRadius,
-        borderWidth: borders.standard.borderWidth,
-        borderColor: colors.border,
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing.sm,
-        transform: [{ translateX: -4 }, { translateY: -4 }],
-    },
-    editButtonText: {
-        ...typography.body,
-        color: colors.textLight,
-        fontSize: 18,
     },
     // Hard shadow wrapper for logout button
     logoutShadow: {

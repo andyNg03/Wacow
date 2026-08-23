@@ -34,6 +34,9 @@ export default function WorkoutsScreen() {
     const [completedIds, setCompletedIds] = useState(new Set())
     const [sessionResults, setSessionResults] = useState([])
     const [userId, setUserId] = useState(null)
+    // null userId alone can't distinguish "still fetching" from "fetch
+    // failed" — that ambiguity was the silent-loss bug. Track it explicitly.
+    const [userIdStatus, setUserIdStatus] = useState('loading') // 'loading' | 'ready' | 'error'
     const [sessionStartTime, setSessionStartTime] = useState(null)
 
     // One ref per exercise card
@@ -44,16 +47,31 @@ export default function WorkoutsScreen() {
         getUserId()
     }, [])
 
+    // Returns the id (and caches it in state), or null on failure — callers
+    // can use the return value directly instead of waiting on a re-render.
     const getUserId = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-            const { data } = await supabase
-                .from('users')
-                .select('id')
-                .eq('auth_id', user.id)
-                .single()
-            if (data) setUserId(data.id)
+        setUserIdStatus('loading')
+        // getSession() reads the login already stored on the device — no
+        // network round-trip, unlike the old getUser(), so one less call
+        // that a bad connection could kill.
+        const { data: { session } } = await supabase.auth.getSession()
+        const authId = session?.user?.id
+        if (!authId) {
+            setUserIdStatus('error')
+            return null
         }
+        const { data, error } = await supabase
+            .from('users')
+            .select('id')
+            .eq('auth_id', authId)
+            .single()
+        if (error) {
+            setUserIdStatus('error')
+            return null
+        }
+        setUserId(data.id)
+        setUserIdStatus('ready')
+        return data.id
     }
 
     // ─── Derived values ───────────────────────────────────────────────────────
@@ -108,27 +126,9 @@ export default function WorkoutsScreen() {
 
     const handleEndSession = () => collectResultsAndShow()
 
-    // Save session results to Supabase and dismiss
-    const handleDismissResults = async () => {
-        if (userId && sessionResults.length > 0) {
-            const duration = sessionStartTime
-                ? Math.round((new Date() - sessionStartTime) / 60000)
-                : 0
-
-            const rows = sessionResults.map((r) => ({
-                user_id: userId,
-                workout_id: r.workout_id,
-                sets: parseInt(r.sets) || 0,
-                reps: parseInt(r.reps) || 0,
-                weight: parseInt(r.weight) || 0,
-                duration: duration,
-                date: new Date().toISOString(),
-            }))
-
-            const { error } = await supabase.from('sessions').insert(rows)
-            if (error) Alert.alert('Error saving', error.message)
-        }
-
+    // The one and only place session state gets cleared. Reached exactly
+    // two ways: the save succeeded, or the user chose to discard.
+    const finishSession = () => {
         if (allCompleted) {
             setSessionState('done')
         } else {
@@ -138,8 +138,74 @@ export default function WorkoutsScreen() {
         }
     }
 
+    const saveFailedAlert = (message) => {
+        Alert.alert(
+            'Save failed',
+            message + '\n\nYour workout is still here — tap Save Results ' +
+            'again when you have signal.',
+            [
+                { text: 'Keep results', style: 'cancel' },
+                { text: 'Discard workout', style: 'destructive', onPress: finishSession },
+            ]
+        )
+    }
+
+    // Save session results to Supabase; dismiss ONLY if that worked
+    const handleDismissResults = async () => {
+        if (sessionResults.length === 0) {
+            finishSession()  // nothing to save, nothing to lose
+            return
+        }
+
+        // Last-chance retry if the mount fetch failed — the user may have
+        // walked back into signal since then.
+        let id = userId ?? await getUserId()
+        if (!id) {
+            saveFailedAlert("Can't reach the server.")
+            return
+        }
+
+        const duration = sessionStartTime
+            ? Math.round((new Date() - sessionStartTime) / 60000)
+            : 0
+
+        const rows = sessionResults.map((r) => ({
+            user_id: id,
+            workout_id: r.workout_id,
+            sets: parseInt(r.sets) || 0,
+            reps: parseInt(r.reps) || 0,
+            weight: parseInt(r.weight) || 0,
+            duration: duration,
+            date: new Date().toISOString(),
+        }))
+
+        const { error } = await supabase.from('sessions').insert(rows)
+        if (error) {
+            saveFailedAlert(error.message)
+            return  // overlay stays; results stay; retry is free
+        }
+        finishSession()
+    }
+
     // ─── Render: Exercise Picker ──────────────────────────────────────────────
     if (sessionState === 'picking') {
+        // Fail loudly at the door, not silently at the exit: without a
+        // user id nothing can be saved, so don't let a session start.
+        if (userIdStatus === 'error') {
+            return (
+                <View style={styles.doneContainer}>
+                    <Ionicons name="cloud-offline-outline" size={80} color={colors.textMuted} />
+                    <Text style={styles.doneTitle}>Can't reach the server</Text>
+                    <Text style={styles.doneSubtitle}>
+                        Workouts couldn't be saved right now. Check your
+                        connection and try again.
+                    </Text>
+                    <TouchableOpacity style={styles.newSessionBtn} onPress={getUserId}>
+                        <Text style={styles.newSessionText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            )
+        }
         return <ExercisePickerScreen onStartSession={handleStartSession} />
     }
 
