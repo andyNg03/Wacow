@@ -272,9 +272,22 @@ device pass pending)*
       movements). Matches the Phase 2 CHECK-constraint spec exactly
 - [x] Early End Session saved untouched cards as 0/0/0 rows. Fixed: only
       completed exercises are written; nothing completed → nothing saved
-- [ ] Device pass: type "0760" → shows 760; letters impossible in WEIGHT;
+- [x] Device pass: type "0760" → shows 760; letters impossible in WEIGHT;
       zero-card double-tap → "Log it first"; early End Session → only completed
       cards land in `sessions`
+- [x] *(Aug 23 sweep)* "Continue Session" on the results overlay secretly ENDED
+      the session (saved + reset). Fixed: ended-early overlay now offers
+      **Save & Finish** and a **Continue Session** that actually resumes
+      (`sessionState` back to `'active'`, nothing saved, cards intact)
+- [x] *(Aug 23 sweep)* Overlay totals/breakdown included never-completed cards
+      while the save wrote only completed ones — displayed ≠ recorded. Fixed:
+      overlay now receives the same completed-only list the save writes
+- [ ] Device pass for the two fixes above: early-end shows completed-only
+      breakdown + two buttons; Continue resumes with values intact; Save &
+      Finish writes exactly the completed rows; full-completion path unchanged
+- [ ] *(minor, Aug 23 sweep)* Wizard's age/height/weight inputs accept leading
+      zeros ("0170" passes validation as 170) — apply ExerciseCard's `cleanInt`
+      to ProfileSetupScreen's inputs for consistency
 
 **Auth flow, still open**
 - [ ] Password reset / "forgot password" flow — **Apple will test this.** Email/password
@@ -295,7 +308,9 @@ HomeScreen's item.)*
       goal from `users.weekly_goal` + the same aggregation; this-week totals +
       weekly chart from the current week's sessions; **Recent Workouts from
       `sessions` newest-first (strip its fake calories)**; loading state; empty
-      state for a brand-new user
+      state for a brand-new user. *(Aug 23 sweep landmine: clamp MonthlyGoal's
+      progress bar at 100% and guard divide-by-zero — the first user to beat
+      their goal overflows the bar)*
 - [ ] **WorkoutsScreen** — ~~save failure handling~~ done in 1b; trigger the streak
       update after save
 - [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`;

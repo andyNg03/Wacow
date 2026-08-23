@@ -126,6 +126,10 @@ export default function WorkoutsScreen() {
 
     const handleEndSession = () => collectResultsAndShow()
 
+    // "Continue Session" on the overlay: no save, no reset — just drop back
+    // into the active session with every card exactly as it was.
+    const handleResumeSession = () => setSessionState('active')
+
     // The one and only place session state gets cleared. Reached exactly
     // two ways: the save succeeded, or the user chose to discard.
     const finishSession = () => {
@@ -299,9 +303,12 @@ export default function WorkoutsScreen() {
             {/* Results overlay */}
             {sessionState === 'results' && (
                 <ResultsOverlay
-                    sessionResults={sessionResults}
+                    // The overlay shows ONLY completed cards — the same list
+                    // the save writes. Receipt and register read one paper.
+                    sessionResults={sessionResults.filter((r) => completedIds.has(r.workout_id))}
                     completedIds={completedIds}
                     onDismiss={handleDismissResults}
+                    onResume={handleResumeSession}
                     allCompleted={allCompleted}
                     elapsedTime={sessionStartTime
                         ? Math.floor((new Date() - sessionStartTime) / 1000)

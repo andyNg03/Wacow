@@ -8,7 +8,7 @@ import { colors, borders, spacing, typography } from '../style/theme'
 
 const { width, height } = Dimensions.get('screen')
 
-export default function ResultsOverlay({ sessionResults, completedIds, onDismiss, allCompleted, elapsedTime }) {
+export default function ResultsOverlay({ sessionResults, completedIds, onDismiss, onResume, allCompleted, elapsedTime }) {
 
     // Total reps = sum of (reps * sets) across all exercises
     const totalReps = sessionResults.reduce(
@@ -105,14 +105,30 @@ export default function ResultsOverlay({ sessionResults, completedIds, onDismiss
                         </View>
                     </View>
 
-                    {/* Dismiss button */}
-                    <View style={styles.dismissShadow}>
-                        <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
-                            <Text style={styles.dismissText}>
-                                {allCompleted ? 'AWESOME! 🎉' : 'Continue Session'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    {/* All done: one button, save and celebrate.
+                        Ended early: two honest choices — save what's completed
+                        and finish, or go back and keep going. "Continue" used
+                        to secretly END the session; now it resumes it. */}
+                    {allCompleted ? (
+                        <View style={styles.dismissShadow}>
+                            <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
+                                <Text style={styles.dismissText}>AWESOME! 🎉</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <>
+                            <View style={styles.dismissShadow}>
+                                <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
+                                    <Text style={styles.dismissText}>Save & Finish</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <View style={[styles.dismissShadow, styles.resumeSpacing]}>
+                                <TouchableOpacity style={styles.dismissButton} onPress={onResume}>
+                                    <Text style={styles.dismissText}>Continue Session</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </>
+                    )}
 
                 </ScrollView>
             </LinearGradient>
@@ -295,5 +311,8 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '900',
         color: colors.textDark,
+    },
+    resumeSpacing: {
+        marginTop: spacing.md,
     },
 })
