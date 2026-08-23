@@ -149,12 +149,12 @@ to.** Listing them as open choices invites someone to spend a week building the 
       Delete Account row survives via MenuList on Profile. PR also fixed the SDK 54
       dependency set (expo-notifications removed — it was breaking launches).
       **Follow-ups from the merged-without-review PR:**
-  - [ ] Device pass on merged main — the combined wizard (validation + keyboard),
+  - [x] Device pass on merged main — the combined wizard (validation + keyboard),
         Profile's new layout, and Recent Workouts below the fold were never
         visually verified together
   - [ ] Strip calories (a decided DELETE, nothing to wire it to) from HomeScreen's
         WeekSummary + Recent Workouts during the 1c wiring pass
-  - [ ] `StatsScreen.js` is now an orphan on main — delete or mark
+  - [x] `StatsScreen.js` is now an orphan on main — delete or mark
         kept-for-reference
 
 **Sweep**
@@ -258,6 +258,23 @@ Aug 21, verified on device**
 - [x] Picker fetch failure now shows an inline "can't reach the server" + Retry
       in the list area (alert removed — it just dead-ended into an empty list)
 - [x] `signOut()` error read and alerted in ProfileScreen's logout
+
+**ExerciseCard.js / session inputs** *(found Aug 23 by Andy — fixed same day,
+device pass pending)*
+- [x] Stat boxes accepted garbage: leading zeros ("0760"), letters in WEIGHT
+      (it used the full keyboard), unbounded digits. Fixed: every keystroke runs
+      through a digits-only/no-leading-zeros cleaner; all three boxes use
+      `number-pad`; digit caps weight 4 / reps 3 / sets 2 (caps generous enough
+      that only typos hit them — mirrors how Strong/Hevy bound input rather
+      than argue with users)
+- [x] A card could be double-tap completed with 0 reps/sets. Fixed: completing
+      requires reps ≥ 1 and sets ≥ 1 (weight 0 stays legal — bodyweight
+      movements). Matches the Phase 2 CHECK-constraint spec exactly
+- [x] Early End Session saved untouched cards as 0/0/0 rows. Fixed: only
+      completed exercises are written; nothing completed → nothing saved
+- [ ] Device pass: type "0760" → shows 760; letters impossible in WEIGHT;
+      zero-card double-tap → "Log it first"; early End Session → only completed
+      cards land in `sessions`
 
 **Auth flow, still open**
 - [ ] Password reset / "forgot password" flow — **Apple will test this.** Email/password

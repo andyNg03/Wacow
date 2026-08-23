@@ -152,8 +152,12 @@ export default function WorkoutsScreen() {
 
     // Save session results to Supabase; dismiss ONLY if that worked
     const handleDismissResults = async () => {
-        if (sessionResults.length === 0) {
-            finishSession()  // nothing to save, nothing to lose
+        // Only COMPLETED exercises become rows. Untouched cards from an
+        // early End Session aren't workouts — without this filter they'd
+        // save as 0/0/0 junk (which Phase 2's DB constraints will reject).
+        const completedRows = sessionResults.filter((r) => completedIds.has(r.workout_id))
+        if (completedRows.length === 0) {
+            finishSession()  // nothing completed, nothing to save
             return
         }
 
@@ -169,7 +173,7 @@ export default function WorkoutsScreen() {
             ? Math.round((new Date() - sessionStartTime) / 60000)
             : 0
 
-        const rows = sessionResults.map((r) => ({
+        const rows = completedRows.map((r) => ({
             user_id: id,
             workout_id: r.workout_id,
             sets: parseInt(r.sets) || 0,
