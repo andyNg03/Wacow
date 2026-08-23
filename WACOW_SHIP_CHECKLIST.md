@@ -282,9 +282,12 @@ device pass pending)*
 - [x] *(Aug 23 sweep)* Overlay totals/breakdown included never-completed cards
       while the save wrote only completed ones — displayed ≠ recorded. Fixed:
       overlay now receives the same completed-only list the save writes
-- [ ] Device pass for the two fixes above: early-end shows completed-only
-      breakdown + two buttons; Continue resumes with values intact; Save &
-      Finish writes exactly the completed rows; full-completion path unchanged
+- [x] Device pass for the two fixes above — passed Aug 23 (after a stale-bundle
+      scare: first run showed old code; `expo start -c` + full reload fixed it).
+      Design decision confirmed same day: **an unfinished session does NOT
+      survive logout** — logout is a privacy boundary (shared-device risk), and
+      double-tap ≠ save; Save & Finish is the only recorder. App.js's gate
+      already enforces this by unmounting the tab tree on logout
 - [ ] *(minor, Aug 23 sweep)* Wizard's age/height/weight inputs accept leading
       zeros ("0170" passes validation as 170) — apply ExerciseCard's `cleanInt`
       to ProfileSetupScreen's inputs for consistency
@@ -490,6 +493,9 @@ Deferred, not cancelled. Revisit after App Store v1 is stable.
   what date a late-synced session counts toward, since streaks care). The v1 fix only
   keeps results in memory until save succeeds — good for network blips, not for
   app-killed-mid-workout
+- **Logout-mid-session warning** — if a workout session is active when the user
+  taps Logout, confirm first: "You have an unfinished workout — discard it?"
+  (v1 behavior: it's silently discarded, which is correct but unceremonious)
 - Pull-to-refresh, tab/overlay animations
 - AsyncStorage → SecureStore migration
 - Settings screen, help & support, rate-us prompt
