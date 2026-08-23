@@ -1,10 +1,13 @@
-// Profile Screen — shows user header, stats, personal info, and edit/logout buttons
+// Profile Screen — user header, stats, personal info, edit/logout buttons,
+// plus the app info and menu that used to live on the More tab
 
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import ProfileHeader from '../components/ProfileHeader'
 import StatsGrid from '../components/StatsGrid'
 import PersonalInfo from '../components/PersonalInfo'
+import AppInfoCard from '../components/AppInfoCard'
+import MenuList from '../components/MenuList'
+import MoreFooter from '../components/MoreFooter'
 import { supabase } from '../lib/supabase'
 import { colors, borders, spacing, typography } from '../style/theme'
 
@@ -35,12 +38,18 @@ export default function ProfileScreen() {
             {/* Personal info rows */}
             <PersonalInfo data={personalInfo} />
 
+            {/* App info and menu — moved here from the old More tab */}
+            <AppInfoCard />
+            <MenuList />
+
             {/* Logout button — white with red border */}
             <View style={styles.logoutShadow}>
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                     <Text style={styles.logoutText}>Logout</Text>
                 </TouchableOpacity>
             </View>
+
+            <MoreFooter />
         </ScrollView>
     )
 }
