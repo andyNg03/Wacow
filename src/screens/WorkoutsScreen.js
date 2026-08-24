@@ -18,6 +18,7 @@ import SessionTimer from '../components/SessionTimer'
 import ResultsOverlay from '../components/ResultsOverlay'
 import ExercisePickerScreen from './ExercisePickerScreen'
 import { supabase } from '../lib/supabase'
+import * as Crypto from 'expo-crypto'
 import { colors, borders, spacing, typography } from '../style/theme'
 
 // Card colors cycle: red → gold → white
@@ -177,9 +178,14 @@ export default function WorkoutsScreen() {
             ? Math.round((new Date() - sessionStartTime) / 60000)
             : 0
 
+        // One id per save: every row of this workout shares it, so
+        // aggregations can group "one gym visit" honestly.
+        const sessionId = Crypto.randomUUID()
+
         const rows = completedRows.map((r) => ({
             user_id: id,
             workout_id: r.workout_id,
+            session_id: sessionId,
             sets: parseInt(r.sets) || 0,
             reps: parseInt(r.reps) || 0,
             weight: parseInt(r.weight) || 0,
