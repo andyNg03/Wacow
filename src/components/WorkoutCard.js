@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 //import { Dumbbell, Clock, Flame } from 'lucide-react-native'
 
 // Greeting view for Home screen
-export default function WorkoutCard({ name, duration, calories, gradientColors }) {
+export default function WorkoutCard({ name, duration, exercises, gradientColors }) {
     return (
         <View style={styles.shadowWrapper}>
             <TouchableOpacity activeOpacity={0.9}>
@@ -27,8 +27,8 @@ export default function WorkoutCard({ name, duration, calories, gradientColors }
                             <Text style={styles.statText}>{duration} min</Text>
                         </View>
                         <View style={styles.stat}>
-                            <Text>🔥 </Text>
-                            <Text style={styles.statText}>{calories} cal</Text>
+                            <Text>📋 </Text>
+                            <Text style={styles.statText}>{exercises} {exercises === 1 ? 'exercise' : 'exercises'}</Text>
                         </View>
                     </View>
                 </LinearGradient>
