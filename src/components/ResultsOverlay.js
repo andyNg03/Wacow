@@ -1,9 +1,11 @@
 // ResultsOverlay — full screen overlay shown after session ends
 // Shows total sets, reps, exercise breakdown, time, and current streak
 
+import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
+import { supabase } from '../lib/supabase'
 import { colors, borders, spacing, typography } from '../style/theme'
 
 const { width, height } = Dimensions.get('screen')
@@ -25,8 +27,19 @@ export default function ResultsOverlay({ sessionResults, completedIds, onDismiss
     const secs = ((elapsedTime || 0) % 60).toString().padStart(2, '0')
     const sessionTime = `${mins}:${secs}`
 
-    // TODO (Backend): Replace with real streak from Supabase
-    const currentStreak = 8
+    // Streak this save will produce (assume_today) — same function the
+    // Home card reads without the flag, so the two can never disagree.
+    const [streak, setStreak] = useState(null) // null = loading, 'error' = failed
+    useEffect(() => {
+        let cancelled = false
+        supabase.rpc('current_streak', {
+            tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            assume_today: true,
+        }).then(({ data, error }) => {
+            if (!cancelled) setStreak(error ? 'error' : data)
+        })
+        return () => { cancelled = true }
+    }, [])
 
     return (
         <View style={styles.overlay}>
@@ -101,7 +114,9 @@ export default function ResultsOverlay({ sessionResults, completedIds, onDismiss
                         <Ionicons name="flame" size={22} color={colors.textDark} />
                         <View>
                             <Text style={styles.streakLabel}>Current Streak</Text>
-                            <Text style={styles.streakValue}>{currentStreak} Days</Text>
+                            <Text style={styles.streakValue}>
+                                {typeof streak === 'number' ? `${streak} Days` : streak === 'error' ? '—' : '…'}
+                            </Text>
                         </View>
                     </View>
 

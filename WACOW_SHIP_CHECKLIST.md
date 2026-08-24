@@ -379,6 +379,10 @@ surface something.
 - [ ] NOT NULL where applicable (user_id, workout_id, date)
 - [ ] Foreign keys with ON DELETE behavior defined *(needed for account deletion to work
       cleanly)*
+- [ ] DROP the orphan `streaks` table (+ its 4 RLS policies) — abandoned stored-counter
+      design; streak is now derived by `current_streak()` (Aug 23), nothing references
+      the table. Verify no references first, then drop in dashboard + remove from
+      `schema.sql`.
 
 ---
 
