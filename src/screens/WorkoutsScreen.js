@@ -18,6 +18,7 @@ import SessionTimer from '../components/SessionTimer'
 import ResultsOverlay from '../components/ResultsOverlay'
 import ExercisePickerScreen from './ExercisePickerScreen'
 import { supabase } from '../lib/supabase'
+import * as Crypto from 'expo-crypto'
 import { colors, borders, spacing, typography } from '../style/theme'
 
 // Card colors cycle: red → gold → white
@@ -126,6 +127,10 @@ export default function WorkoutsScreen() {
 
     const handleEndSession = () => collectResultsAndShow()
 
+    // "Continue Session" on the overlay: no save, no reset — just drop back
+    // into the active session with every card exactly as it was.
+    const handleResumeSession = () => setSessionState('active')
+
     // The one and only place session state gets cleared. Reached exactly
     // two ways: the save succeeded, or the user chose to discard.
     const finishSession = () => {
@@ -152,8 +157,12 @@ export default function WorkoutsScreen() {
 
     // Save session results to Supabase; dismiss ONLY if that worked
     const handleDismissResults = async () => {
-        if (sessionResults.length === 0) {
-            finishSession()  // nothing to save, nothing to lose
+        // Only COMPLETED exercises become rows. Untouched cards from an
+        // early End Session aren't workouts — without this filter they'd
+        // save as 0/0/0 junk (which Phase 2's DB constraints will reject).
+        const completedRows = sessionResults.filter((r) => completedIds.has(r.workout_id))
+        if (completedRows.length === 0) {
+            finishSession()  // nothing completed, nothing to save
             return
         }
 
@@ -169,9 +178,14 @@ export default function WorkoutsScreen() {
             ? Math.round((new Date() - sessionStartTime) / 60000)
             : 0
 
-        const rows = sessionResults.map((r) => ({
+        // One id per save: every row of this workout shares it, so
+        // aggregations can group "one gym visit" honestly.
+        const sessionId = Crypto.randomUUID()
+
+        const rows = completedRows.map((r) => ({
             user_id: id,
             workout_id: r.workout_id,
+            session_id: sessionId,
             sets: parseInt(r.sets) || 0,
             reps: parseInt(r.reps) || 0,
             weight: parseInt(r.weight) || 0,
@@ -295,9 +309,12 @@ export default function WorkoutsScreen() {
             {/* Results overlay */}
             {sessionState === 'results' && (
                 <ResultsOverlay
-                    sessionResults={sessionResults}
+                    // The overlay shows ONLY completed cards — the same list
+                    // the save writes. Receipt and register read one paper.
+                    sessionResults={sessionResults.filter((r) => completedIds.has(r.workout_id))}
                     completedIds={completedIds}
                     onDismiss={handleDismissResults}
+                    onResume={handleResumeSession}
                     allCompleted={allCompleted}
                     elapsedTime={sessionStartTime
                         ? Math.floor((new Date() - sessionStartTime) / 1000)

@@ -4,12 +4,12 @@ import { View, Text, StyleSheet } from 'react-native'
 import { colors, shadows, borders, spacing, typography } from '../style/theme'
 import { Ionicons } from '@expo/vector-icons'
 
-export default function HeroCard() {
+export default function HeroCard({ name }) {
     return (
         <View style={styles.card}>
             {/* Title row with sparkle icon */}
             <View style={styles.titleRow}>
-                <Text style={styles.title}>Hey Champion!</Text>
+                <Text style={styles.title}>Hey {name || 'Champion'}!</Text>
             </View>
             <Text style={styles.subtitle}>Let's get MOOOOving!</Text>
         </View>

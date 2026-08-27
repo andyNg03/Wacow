@@ -13,7 +13,7 @@
 // TODO (Backend): When completed, send completion to Supabase
 
 import { useRef, useState, forwardRef, useImperativeHandle } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, borders, spacing, typography } from '../style/theme'
 
@@ -52,6 +52,16 @@ const ExerciseCard = forwardRef(function ExerciseCard(
             if (isCompleted) {
                 onUncomplete() // uncheck if already done
             } else {
+                // A card with no reps or sets logged isn't a done exercise.
+                // Weight 0 stays legal — bodyweight movements have no load.
+                const r = parseInt(reps) || 0
+                const s = parseInt(sets) || 0
+                if (r < 1 || s < 1) {
+                    Alert.alert('Log it first',
+                        'Enter your reps and sets before marking this done.')
+                    lastTap.current = null
+                    return
+                }
                 onComplete()   // check off if not done
             }
             lastTap.current = null // reset so next tap starts fresh
@@ -107,7 +117,8 @@ const ExerciseCard = forwardRef(function ExerciseCard(
                         value={weight}
                         onChangeText={setWeight}
                         cardColor={cardColor}
-                        keyboardType="default"
+                        keyboardType="number-pad"
+                        maxLength={4}
                     />
                     <EditableStatBox
                         label="REPS"
@@ -115,6 +126,7 @@ const ExerciseCard = forwardRef(function ExerciseCard(
                         onChangeText={setReps}
                         cardColor={cardColor}
                         keyboardType="number-pad"
+                        maxLength={3}
                     />
                     <EditableStatBox
                         label="SETS"
@@ -122,6 +134,7 @@ const ExerciseCard = forwardRef(function ExerciseCard(
                         onChangeText={setSets}
                         cardColor={cardColor}
                         keyboardType="number-pad"
+                        maxLength={2}
                     />
                 </View>
             </View>
@@ -129,10 +142,18 @@ const ExerciseCard = forwardRef(function ExerciseCard(
     )
 })
 
+// Keystroke cleaner for the stat boxes: digits only, no leading zeros.
+// "0760" -> "760", "12a" -> "12", a lone "0" stays "0" (the lookahead
+// only strips zeros that have another digit after them).
+const cleanInt = (text) =>
+    text.replace(/[^0-9]/g, '').replace(/^0+(?=\d)/, '')
+
 // ─── Editable stat box ────────────────────────────────────────────────────────
 // TextInput lets user tap and edit the value
 // selectTextOnFocus highlights all text when tapped — easy to replace
-function EditableStatBox({ label, value, onChangeText, cardColor, keyboardType }) {
+// Every keystroke passes through cleanInt before reaching state, so an
+// invalid string never exists anywhere — not in state, not on screen.
+function EditableStatBox({ label, value, onChangeText, cardColor, keyboardType, maxLength }) {
     return (
         <View style={[styles.statBox, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
             <Text style={[styles.statLabel, { color: cardColor.text, opacity: 0.7 }]}>
@@ -141,8 +162,9 @@ function EditableStatBox({ label, value, onChangeText, cardColor, keyboardType }
             <TextInput
                 style={[styles.statValue, { color: cardColor.text }]}
                 value={value}
-                onChangeText={onChangeText}
+                onChangeText={(text) => onChangeText(cleanInt(text))}
                 keyboardType={keyboardType}
+                maxLength={maxLength}
                 selectTextOnFocus
             />
         </View>

@@ -38,8 +38,7 @@ export default function ProfileScreen() {
             {/* Personal info rows */}
             <PersonalInfo data={personalInfo} />
 
-            {/* App info and menu — moved here from the old More tab */}
-            <AppInfoCard />
+            {/* Menu — moved here from the old More tab */}
             <MenuList />
 
             {/* Logout button — white with red border */}
@@ -48,6 +47,8 @@ export default function ProfileScreen() {
                     <Text style={styles.logoutText}>Logout</Text>
                 </TouchableOpacity>
             </View>
+
+            <AppInfoCard />
 
             <MoreFooter />
         </ScrollView>

@@ -142,11 +142,20 @@ to.** Listing them as open choices invites someone to spend a week building the 
       (Share App's gradient, trash icon, listed last; named to match Apple's
       5.1.1(v) language). **Still a placeholder** — wiring waits on the Phase 2
       Edge Function
-- [ ] **(Toung)** Converge Home, Profile, and Stats into a single HomeScreen — after
-      the Group A deletions the three tabs look empty; merge their surviving content
-      into one screen. *Ripples to check when doing this: `TabNav.js` drops two tabs;
-      the three separate 1c wiring items below collapse into one; logout + Edit
-      Profile buttons (currently on ProfileScreen) need a new home*
+- [x] **(Tuong)** Converge screens — **done Aug 23 (PR #4), as-built differs from
+      the original plan:** Stats merged into Home (goal → stat cards → week summary →
+      chart → new Recent Workouts list), More merged into Profile, **Profile kept as
+      its own tab** — 3 tabs total (Home, Workout, Profile). MoreScreen deleted;
+      Delete Account row survives via MenuList on Profile. PR also fixed the SDK 54
+      dependency set (expo-notifications removed — it was breaking launches).
+      **Follow-ups from the merged-without-review PR:**
+  - [x] Device pass on merged main — the combined wizard (validation + keyboard),
+        Profile's new layout, and Recent Workouts below the fold were never
+        visually verified together
+  - [ ] Strip calories (a decided DELETE, nothing to wire it to) from HomeScreen's
+        WeekSummary + Recent Workouts during the 1c wiring pass
+  - [x] `StatsScreen.js` is now an orphan on main — delete or mark
+        kept-for-reference
 
 **Sweep**
 - [x] Grep for remaining hardcoded module-level arrays feeding the UI — done Aug 21.
@@ -250,6 +259,39 @@ Aug 21, verified on device**
       in the list area (alert removed — it just dead-ended into an empty list)
 - [x] `signOut()` error read and alerted in ProfileScreen's logout
 
+**ExerciseCard.js / session inputs** *(found Aug 23 by Andy — fixed same day,
+device pass pending)*
+- [x] Stat boxes accepted garbage: leading zeros ("0760"), letters in WEIGHT
+      (it used the full keyboard), unbounded digits. Fixed: every keystroke runs
+      through a digits-only/no-leading-zeros cleaner; all three boxes use
+      `number-pad`; digit caps weight 4 / reps 3 / sets 2 (caps generous enough
+      that only typos hit them — mirrors how Strong/Hevy bound input rather
+      than argue with users)
+- [x] A card could be double-tap completed with 0 reps/sets. Fixed: completing
+      requires reps ≥ 1 and sets ≥ 1 (weight 0 stays legal — bodyweight
+      movements). Matches the Phase 2 CHECK-constraint spec exactly
+- [x] Early End Session saved untouched cards as 0/0/0 rows. Fixed: only
+      completed exercises are written; nothing completed → nothing saved
+- [x] Device pass: type "0760" → shows 760; letters impossible in WEIGHT;
+      zero-card double-tap → "Log it first"; early End Session → only completed
+      cards land in `sessions`
+- [x] *(Aug 23 sweep)* "Continue Session" on the results overlay secretly ENDED
+      the session (saved + reset). Fixed: ended-early overlay now offers
+      **Save & Finish** and a **Continue Session** that actually resumes
+      (`sessionState` back to `'active'`, nothing saved, cards intact)
+- [x] *(Aug 23 sweep)* Overlay totals/breakdown included never-completed cards
+      while the save wrote only completed ones — displayed ≠ recorded. Fixed:
+      overlay now receives the same completed-only list the save writes
+- [x] Device pass for the two fixes above — passed Aug 23 (after a stale-bundle
+      scare: first run showed old code; `expo start -c` + full reload fixed it).
+      Design decision confirmed same day: **an unfinished session does NOT
+      survive logout** — logout is a privacy boundary (shared-device risk), and
+      double-tap ≠ save; Save & Finish is the only recorder. App.js's gate
+      already enforces this by unmounting the tab tree on logout
+- [ ] *(minor, Aug 23 sweep)* Wizard's age/height/weight inputs accept leading
+      zeros ("0170" passes validation as 170) — apply ExerciseCard's `cleanInt`
+      to ProfileSetupScreen's inputs for consistency
+
 **Auth flow, still open**
 - [ ] Password reset / "forgot password" flow — **Apple will test this.** Email/password
       auth with no recovery path is both a support disaster and a review risk
@@ -260,15 +302,22 @@ Aug 21, verified on device**
 
 ### 1c. Wire the screens to real data
 
-- [ ] **HomeScreen** — streak computed from `sessions` (consecutive days, midnight
-      rollover in the user's timezone; keep the logic in one place, recommend a Postgres
-      function/view); workout count from `sessions`; loading state; empty state for a
-      brand-new user
-- [ ] **WorkoutsScreen** — save already works; handle save failure (network down, RLS
-      reject) so a workout is never silently lost; trigger the streak update after save
-- [ ] **StatsScreen** — query the current week's sessions → weekly chart; totals from real
-      data; empty-data case
-- [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`; loading state
+*(Reshaped Aug 23 by the screen convergence — Stats' wiring now lives inside
+HomeScreen's item.)*
+
+- [ ] **HomeScreen (the dashboard)** — streak from `sessions` (consecutive days,
+      midnight rollover in the user's timezone; keep the logic in one place,
+      recommend a Postgres function/view); workout count from `sessions`; monthly
+      goal from `users.weekly_goal` + the same aggregation; this-week totals +
+      weekly chart from the current week's sessions; **Recent Workouts from
+      `sessions` newest-first (strip its fake calories)**; loading state; empty
+      state for a brand-new user. *(Aug 23 sweep landmine: clamp MonthlyGoal's
+      progress bar at 100% and guard divide-by-zero — the first user to beat
+      their goal overflows the bar)*
+- [ ] **WorkoutsScreen** — ~~save failure handling~~ done in 1b; trigger the streak
+      update after save
+- [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`;
+      loading state
 
 ---
 
@@ -317,7 +366,9 @@ surface something.
 - [ ] Bundle ID set to the final value
 - [ ] Signing certificates / provisioning handled by EAS (confirm the account is enrolled)
 - [ ] App icon and splash render correctly on device
-- [ ] Fix `expo-notifications` version mismatch (54 vs SDK 55.0.x)
+- [x] ~~Fix `expo-notifications` version mismatch~~ — resolved Aug 23 (PR #4):
+      package removed entirely; it was an SDK 55 package pulling a duplicate
+      `expo-constants` native module. `expo-doctor` 18/18
 - [ ] Audit `.env` — only `EXPO_PUBLIC_` keys in the app (anon key fine; **service role
       key NEVER**)
 - [ ] Separate production Supabase project from dev (don't ship test data)
@@ -328,6 +379,10 @@ surface something.
 - [ ] NOT NULL where applicable (user_id, workout_id, date)
 - [ ] Foreign keys with ON DELETE behavior defined *(needed for account deletion to work
       cleanly)*
+- [ ] DROP the orphan `streaks` table (+ its 4 RLS policies) — abandoned stored-counter
+      design; streak is now derived by `current_streak()` (Aug 23), nothing references
+      the table. Verify no references first, then drop in dashboard + remove from
+      `schema.sql`.
 
 ---
 
@@ -442,6 +497,9 @@ Deferred, not cancelled. Revisit after App Store v1 is stable.
   what date a late-synced session counts toward, since streaks care). The v1 fix only
   keeps results in memory until save succeeds — good for network blips, not for
   app-killed-mid-workout
+- **Logout-mid-session warning** — if a workout session is active when the user
+  taps Logout, confirm first: "You have an unfinished workout — discard it?"
+  (v1 behavior: it's silently discarded, which is correct but unceremonious)
 - Pull-to-refresh, tab/overlay animations
 - AsyncStorage → SecureStore migration
 - Settings screen, help & support, rate-us prompt

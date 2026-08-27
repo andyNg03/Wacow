@@ -49,14 +49,49 @@ CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 begin
-  insert into public.users (auth_id, email)
-  values (new.id, new.email);
+  insert into public.users (auth_id, email, name, profile_complete)
+  values (new.id, new.email, new.raw_user_meta_data->>'name', false);
   return new;
 end;
 $$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+
+
+-- Current workout streak, derived from sessions (never stored).
+-- Distinct workout days in the caller's timezone; gaps-and-islands walk
+-- from the newest day; streak is dead once the newest day is older than
+-- yesterday. assume_today=true counts today as worked (ResultsOverlay
+-- shows the streak the pending save will produce; Home passes nothing).
+CREATE OR REPLACE FUNCTION "public"."current_streak"(
+    "tz" "text" DEFAULT 'UTC',
+    "assume_today" boolean DEFAULT false
+) RETURNS integer
+    LANGUAGE "sql" STABLE
+    AS $$
+  with days as (
+    select distinct (s.date at time zone tz)::date as day
+    from public.sessions s
+    join public.users u on u.id = s.user_id
+    where u.auth_id = auth.uid()
+    union
+    select (now() at time zone tz)::date where assume_today
+  ),
+  numbered as (
+    select day, row_number() over (order by day desc) as rn
+    from days
+  )
+  select coalesce((
+    select count(*)::int
+    from numbered
+    where day = (select max(day) from days) - (rn - 1)::int
+      and (select max(day) from days) >= (now() at time zone tz)::date - 1
+  ), 0);
+$$;
+
+
+ALTER FUNCTION "public"."current_streak"("tz" "text", "assume_today" boolean) OWNER TO "postgres";
 
 SET default_tablespace = '';
 
@@ -85,7 +120,8 @@ CREATE TABLE IF NOT EXISTS "public"."sessions" (
     "reps" smallint DEFAULT '0'::smallint,
     "weight" smallint DEFAULT '0'::smallint,
     "duration" smallint DEFAULT '0'::smallint,
-    "date" timestamp with time zone DEFAULT "now"()
+    "date" timestamp with time zone DEFAULT "now"(),
+    "session_id" "uuid"
 );
 
 
