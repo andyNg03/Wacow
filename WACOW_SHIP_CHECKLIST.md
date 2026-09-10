@@ -17,7 +17,7 @@
   blocking constraint entirely.
 - **The new critical path is Apple's review, not a waiting period.** Review is fast
   (typically 24–48h), but **rejection is likely on a first submission** and each round costs
-  1–3 days. The schedule is built around surviving one rejection inside the target and a
+  1–3 days. The schedule is built around surviving one ryejection inside the target and a
   second inside the grace window.
 
 ### What that means for the deadline
@@ -109,10 +109,10 @@ XP, badges, achievements, and the daily challenge were cut from v1 back in July:
 tables, RLS, and trigger logic are all deferred to v1.1. **There is nothing to wire them
 to.** Listing them as open choices invites someone to spend a week building the XP system.
 
-- [x] HomeScreen — (Delete) XP stat card, achievements card, badges row, DailyChallenge
-- [x] StatsScreen — (Delete) LatestAchievement
-- [x] ProfileScreen — (Delete) BadgesSection, level/XP bar *(or repoint the bar to streak)*
-- [x] (Delete) `SearchBar.js` is 0 bytes — delete
+- [ ] HomeScreen — XP stat card, achievements card, badges row, DailyChallenge
+- [ ] StatsScreen — LatestAchievement
+- [ ] ProfileScreen — BadgesSection, level/XP bar *(or repoint the bar to streak)*
+- [ ] `SearchBar.js` is 0 bytes — delete
 
 **Group B — genuine decisions. The data exists or is cheap; the team calls it.**
 
@@ -124,7 +124,7 @@ to.** Listing them as open choices invites someone to spend a week building the 
 | StatsScreen "This week" / "Activity This Week" (workouts, active time) | computable from `sessions`; no existing query pattern in the repo yet, new aggregation logic | ☑ wire |
 | StatsScreen "calories" stat | no calories column exists anywhere in the `sessions` insert shape — nothing to wire | ☑ delete |
 | Monthly goal | `users.weekly_goal` value is trivial; "progress" rides on the same `sessions` aggregation as the week stats above | ☑ wire |
-| Edit Profile button | reuses ProfileSetupScreen — **must add pre-fill of existing values first**, or opening it blanks out a user's real profile | ⚠ **flipped Aug 21 (Andy):** button removed — repurposed as the Delete Profile row in MoreScreen. **Flag to team: this reverses the Aug 14 "wire" decision**; if Edit Profile is still wanted, it needs a new home |
+| Edit Profile button | reuses ProfileSetupScreen — **must add pre-fill of existing values first**, or opening it blanks out a user's real profile | ☑ wire |
 | `ProfileHeader.js:32` hardcoded `"Gym Hero"` | same pattern as greetings card | ☑ wire |
 
 **MoreScreen placeholder menu items** — decided per row, not as one item:
@@ -135,51 +135,15 @@ to.** Listing them as open choices invites someone to spend a week building the 
 | Help & Support | ☑ wire | New screen, two options: "Question" and "Report Issue" |
 | Share App | ☑ wire | Trivial — native `Share.share()`, no backend |
 | Rate Us | ☑ delete | No App Store link exists pre-launch — can't wire a link that doesn't exist yet |
+| About | ☑ wire | New screen: "WaCow 2026, co-founded by Jiaxiu Li, Andrew Nguyen, Zahi Ladhkan, and Tarun Kancharla" (alphabetical) — use `src/style/theme.js`, not hardcoded styles |
 
 **Group C — additions, not removals (tracked here so 1a is the single UI worklist)**
 
-- [x] Add the delete button — done Aug 21: **"Delete Account"** row in MoreScreen
-      (Share App's gradient, trash icon, listed last; named to match Apple's
-      5.1.1(v) language). **Still a placeholder** — wiring waits on the Phase 2
-      Edge Function
-- [x] **(Tuong)** Converge screens — **done Aug 23 (PR #4), as-built differs from
-      the original plan:** Stats merged into Home (goal → stat cards → week summary →
-      chart → new Recent Workouts list), More merged into Profile, **Profile kept as
-      its own tab** — 3 tabs total (Home, Workout, Profile). MoreScreen deleted;
-      Delete Account row survives via MenuList on Profile. PR also fixed the SDK 54
-      dependency set (expo-notifications removed — it was breaking launches).
-      **Follow-ups from the merged-without-review PR:**
-  - [x] Device pass on merged main — the combined wizard (validation + keyboard),
-        Profile's new layout, and Recent Workouts below the fold were never
-        visually verified together
-  - [ ] Strip calories (a decided DELETE, nothing to wire it to) from HomeScreen's
-        WeekSummary + Recent Workouts during the 1c wiring pass
-  - [x] `StatsScreen.js` is now an orphan on main — delete or mark
-        kept-for-reference
+- [ ] Add the **Delete Account** button to ProfileScreen/MoreScreen
+      *(the button is trivial; the Edge Function behind it is not — see Phase 2)*
 
 **Sweep**
-- [x] Grep for remaining hardcoded module-level arrays feeding the UI — done Aug 21.
-      **Fake data still rendered (this is tomorrow's wiring worklist, all 1c):**
-  - `HomeScreen.js:9-10` — `dayStreak = 9`, `workouts = 25`
-  - `ProfileScreen.js:12-14` — `workouts = 54`, `daysActive = 12`, `personalInfo`
-    array ("Member Since January 2026", "Favorite Workout Bench Press",
-    "Weekly Goal 5 workouts")
-  - `StatsScreen.js:10-26` — `workouts = 26`, `activeTime = 12`, `weeklyData`
-    array (the chart's bars), `goal = 20`, `progress = 12`, and `calories = 2520`
-    *(calories is a decided DELETE — remove with the wiring pass)*
-  - `ResultsOverlay.js:29` — `currentStreak = 8` *(already tracked above)*
-  - `HeroCard.js:12` — "Hey Champion!" is generic, not fake; personalizing it is
-    the Group B greeting decision
-      **Orphaned, not rendered since the Group A pass (no rejection risk):**
-  - `BadgesSection.js:9` `badges` array — component is unreferenced, as are
-    `BadgeCard`, `LatestAchievement`, `DailyChallenge` (kept for v1.1)
-      **Legit constants, not fake data (leave alone):** `MUSCLE_GROUPS`,
-      `CARD_COLORS`, `menuItems`, `BOX_CONFIGS`, `CHART_HEIGHT`
-- [ ] `ResultsOverlay.js:29` — hardcoded `currentStreak = 8` shows every user an
-      8-day streak after every workout *(found Aug 21; missed by the Group A pass,
-      which only swept the four main screens)*. Wire it to the real streak — the
-      HomeScreen 1c work computes the same number, so reuse that — or hide the
-      streak card for v1
+- [ ] Grep for remaining hardcoded module-level arrays feeding the UI and list them here
 
 ### 1b. Bug fixes
 
@@ -188,136 +152,67 @@ Found during the Aug 2026 code walkthrough. **One root cause runs through most o
 treated as "success"** — including when a write matched zero rows or the network died.
 Files carry inline `BUG —` / `FIX:` comments at each site.
 
-**Highest-value fix — do first, it closes three items at once:** ✅ **done Aug 20,
-verified end-to-end** (throwaway signup → no error alert → `users` row landed with
-name + `profile_complete = false`). Also added the UNIQUE constraint on `users.auth_id`.
+**Highest-value fix — do first, it closes three items at once:**
 
-- [x] ~~Create~~ Edit the signup trigger (it already existed, writing only
-      `auth_id` + `email`) so the `users` row is created **server-side**, guaranteed:
-      `handle_new_user()` (`security definer`) now also writes `name` from
-      `new.raw_user_meta_data->>'name'` and `profile_complete = false`
-- [x] Pass the name into signup so the trigger can read it:
+- [ ] Create the signup trigger in the Supabase SQL editor so the `users` row is created
+      **server-side**, guaranteed, regardless of login state:
+      `handle_new_user()` with `security definer`, reading the name from
+      `new.raw_user_meta_data->>'name'`, fired `after insert on auth.users`
+- [ ] Pass the name into signup so the trigger can read it:
       `supabase.auth.signUp({ email, password, options: { data: { name } } })`
-- [x] Deleted the client-side `users` write in `AuthScreen` — dead code
-      *(this also fixes the ProfileSetupScreen wizard trap below; the "check your
-      email" alert went in with the same edit)*
+- [ ] Then delete the client-side `users` write in `AuthScreen` — it becomes dead code
+      *(this also fixes the ProfileSetupScreen wizard trap below)*
 
-**App.js** — **all five fixed Aug 21, verified on device** (cold-start spinner, no
-flash; airplane-mode cold start shows retry screen instead of the wizard)
-- [x] `checkProfile` three states: `profileStatus` loading/ready/error; genuine
-      no-row (`PGRST116`) routes to the wizard, any other error shows a retry
-      screen instead of routing on a guess
-- [x] Loading state: `authReady` flag + spinner until `getSession()` answers —
-      no screen flash on cold start
-- [x] `onAuthStateChange` subscription unsubscribed via effect cleanup
-- [x] Hourly re-run fixed: effect depends on `session?.user?.id` (string), not
-      the session object
-- [x] Unused `HomeScreen` import removed
+**App.js**
+- [ ] `checkProfile` destructures `error` and never reads it — a failed request sets
+      `profileComplete = false`, dumping an onboarded user into the setup wizard where
+      they can overwrite their real profile. Needs three states: loading / ready / error
+- [ ] No loading state — `session` starts `null` and `getSession()` is async, so
+      AuthScreen (then ProfileSetupScreen) flash on every cold start.
+      `// null = loading` was never implemented: `!null === !false`
+- [ ] `onAuthStateChange` subscription is never unsubscribed
+- [ ] `checkProfile` re-runs on every hourly token refresh — Supabase returns a new
+      session *object*, so the `[session]` dependency sees a change that isn't one
+- [ ] Unused `HomeScreen` import on line 1
 
 **AuthScreen.js**
 - [x] ~~Signup writes the name with `.update()`, which only edits an existing row~~
       → changed to `.upsert()` with the result captured *(Aug 2026; superseded by the
       trigger fix above, which is the real solution)*
-- [x] No "check your email" message when `data.session` is null after signup — added
-      with the trigger fix (Aug 20). Moot while confirmation is OFF, but guards the
-      flow if it's ever turned on
-- [x] Validation added (Aug 21, verified): mode-aware checks before any network
-      call — name required (trimmed) on signup, email format, password ≥ 6
-      (Supabase's own minimum). Also closes the nameless-signup hole that would
-      have re-introduced blank names past the trigger fix
-- [x] `setLoading(false)` moved into `finally` — button can't stick on "Loading..."
-- [x] Hardcoded colors → theme roles (13 swaps). Note: the old `#e53935` wasn't
-      even the brand red — theme `primary` is `#D00000`; the login screen now
-      matches the rest of the app
+- [ ] No "check your email" message when `data.session` is null after signup — the user
+      taps Sign Up, nothing visible happens, and they assume it failed
+- [ ] No validation — empty email/password still fires a network request
+- [ ] `setLoading(false)` is not in a `finally`; a thrown error leaves the button stuck
+      on "Loading..." forever
+- [ ] Hardcoded colors (`#ffffff`, `#e53935`) — project rule says use `src/style/theme.js`
 
 **ProfileSetupScreen.js**
-- [x] ~~`.update()` assumes the row exists → **the wizard trap**~~ — root cause closed
-      by the trigger fix (Aug 20): every account now gets its `users` row server-side,
-      so the update always has a row to hit. *Still worth reading the update's `error`
-      here when touching this file (general error-audit habit)*
-- [x] Field validation added (Aug 21, verified on device): per-step checks gate
-      Next, Complete re-checks all steps and jumps to the offending one; ranges
-      age 13–120, height 50–300 cm, weight 20–500 kg. Save wrapped in
-      `try/finally` so the button can't stick on "Saving..."
-- [x] Escape hatch added (Aug 21): "Log out" button in the wizard header —
-      `signOut()` with the error read; App.js's gate routes to AuthScreen
-
-**WorkoutsScreen.js** *(found in the Aug 19 silent-failure sweep)* — **both fixed
-Aug 21, verified on device** (airplane-mode save → alert with results kept → retry
-with signal → saved; cold-start offline → retry gate blocks session start)
-- [x] 🔴 **Save silently skipped**: `getUserId()` discarded `error` on both calls;
-      `userId` stayed `null` and the save was skipped behind a success screen.
-      Fixed: errors read, `userIdStatus` loading/ready/error, picker shows a
-      retry gate on error, save does a last-chance id re-fetch
-- [x] Save failure alerted but wiped the results anyway. Fixed: session state is
-      only cleared by `finishSession()`, reached solely via successful insert or
-      an explicit "Discard workout" tap — overlay and results survive failures
-
-**ExercisePickerScreen.js / ProfileScreen.js** *(minor, same sweep)* — **both fixed
-Aug 21, verified on device**
-- [x] Picker fetch failure now shows an inline "can't reach the server" + Retry
-      in the list area (alert removed — it just dead-ended into an empty list)
-- [x] `signOut()` error read and alerted in ProfileScreen's logout
-
-**ExerciseCard.js / session inputs** *(found Aug 23 by Andy — fixed same day,
-device pass pending)*
-- [x] Stat boxes accepted garbage: leading zeros ("0760"), letters in WEIGHT
-      (it used the full keyboard), unbounded digits. Fixed: every keystroke runs
-      through a digits-only/no-leading-zeros cleaner; all three boxes use
-      `number-pad`; digit caps weight 4 / reps 3 / sets 2 (caps generous enough
-      that only typos hit them — mirrors how Strong/Hevy bound input rather
-      than argue with users)
-- [x] A card could be double-tap completed with 0 reps/sets. Fixed: completing
-      requires reps ≥ 1 and sets ≥ 1 (weight 0 stays legal — bodyweight
-      movements). Matches the Phase 2 CHECK-constraint spec exactly
-- [x] Early End Session saved untouched cards as 0/0/0 rows. Fixed: only
-      completed exercises are written; nothing completed → nothing saved
-- [x] Device pass: type "0760" → shows 760; letters impossible in WEIGHT;
-      zero-card double-tap → "Log it first"; early End Session → only completed
-      cards land in `sessions`
-- [x] *(Aug 23 sweep)* "Continue Session" on the results overlay secretly ENDED
-      the session (saved + reset). Fixed: ended-early overlay now offers
-      **Save & Finish** and a **Continue Session** that actually resumes
-      (`sessionState` back to `'active'`, nothing saved, cards intact)
-- [x] *(Aug 23 sweep)* Overlay totals/breakdown included never-completed cards
-      while the save wrote only completed ones — displayed ≠ recorded. Fixed:
-      overlay now receives the same completed-only list the save writes
-- [x] Device pass for the two fixes above — passed Aug 23 (after a stale-bundle
-      scare: first run showed old code; `expo start -c` + full reload fixed it).
-      Design decision confirmed same day: **an unfinished session does NOT
-      survive logout** — logout is a privacy boundary (shared-device risk), and
-      double-tap ≠ save; Save & Finish is the only recorder. App.js's gate
-      already enforces this by unmounting the tab tree on logout
-- [ ] *(minor, Aug 23 sweep)* Wizard's age/height/weight inputs accept leading
-      zeros ("0170" passes validation as 170) — apply ExerciseCard's `cleanInt`
-      to ProfileSetupScreen's inputs for consistency
+- [ ] `.update()` assumes the row exists → **the wizard trap**: zero rows edited returns
+      no error, `onComplete()` fires, `checkProfile` finds nothing, user is routed back
+      into the wizard permanently with no logout and no way out but reinstalling
+- [ ] No field validation — Next/Next/Complete with everything blank sets
+      `profile_complete = true`; `parseInt('')` is `NaN`, which serializes to `null`
+- [ ] No escape hatch (no logout, no skip) — every failure here is terminal
 
 **Auth flow, still open**
 - [ ] Password reset / "forgot password" flow — **Apple will test this.** Email/password
       auth with no recovery path is both a support disaster and a review risk
-- [x] (Off for V1) Decide email-confirmation handling: disable for v1 (recommended — no deep-link work),
+- [ ] Decide email-confirmation handling: disable for v1 (recommended — no deep-link work),
       or implement the redirect. Default settings dead-end mobile signups
-- [x] ~~Audit remaining silent-failure spots~~ — done Aug 19: every Supabase call site
-      in the app is now audited; findings recorded above
+- [ ] Audit remaining silent-failure spots — anywhere `error` is destructured and unused,
+      or a call's result is discarded entirely
 
 ### 1c. Wire the screens to real data
 
-*(Reshaped Aug 23 by the screen convergence — Stats' wiring now lives inside
-HomeScreen's item.)*
-
-- [ ] **HomeScreen (the dashboard)** — streak from `sessions` (consecutive days,
-      midnight rollover in the user's timezone; keep the logic in one place,
-      recommend a Postgres function/view); workout count from `sessions`; monthly
-      goal from `users.weekly_goal` + the same aggregation; this-week totals +
-      weekly chart from the current week's sessions; **Recent Workouts from
-      `sessions` newest-first (strip its fake calories)**; loading state; empty
-      state for a brand-new user. *(Aug 23 sweep landmine: clamp MonthlyGoal's
-      progress bar at 100% and guard divide-by-zero — the first user to beat
-      their goal overflows the bar)*
-- [ ] **WorkoutsScreen** — ~~save failure handling~~ done in 1b; trigger the streak
-      update after save
-- [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`;
-      loading state
+- [ ] **HomeScreen** — streak computed from `sessions` (consecutive days, midnight
+      rollover in the user's timezone; keep the logic in one place, recommend a Postgres
+      function/view); workout count from `sessions`; loading state; empty state for a
+      brand-new user
+- [ ] **WorkoutsScreen** — save already works; handle save failure (network down, RLS
+      reject) so a workout is never silently lost; trigger the streak update after save
+- [ ] **StatsScreen** — query the current week's sessions → weekly chart; totals from real
+      data; empty-data case
+- [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`; loading state
 
 ---
 
@@ -325,16 +220,11 @@ HomeScreen's item.)*
 
 ### Row Level Security (BLOCKING — the anon key ships inside the app)
 
-- [x] RLS policy on `users` (read own row, update own row) — *already existed;
-      verified against the Aug 15 schema dump. No INSERT policy, by design: the
-      signup trigger owns row creation*
-- [x] RLS policy on `sessions` (read own, insert own, update own, delete own) —
-      *already existed; verified in dump*
-- [x] RLS policy on `workouts` (read all presets, read/write own custom) —
-      *already existed; verified in dump*
-- [x] `curl` test with the anon key, logged out — **passed Aug 21**: `users` → `[]`,
-      `sessions` → `[]`, `workouts` → presets only (public by design), INSERT into
-      `sessions` → `42501` RLS rejection. Zero user data reachable
+- [ ] RLS policy on `users` (read own row, update own row)
+- [ ] RLS policy on `sessions` (read own, insert own, update own, delete own)
+- [ ] RLS policy on `workouts` (read all presets, read/write own custom)
+- [ ] Test with `curl` using the anon key while logged out → confirm zero access to
+      user data
 
 ### Apple-required, non-negotiable
 
@@ -366,9 +256,7 @@ surface something.
 - [ ] Bundle ID set to the final value
 - [ ] Signing certificates / provisioning handled by EAS (confirm the account is enrolled)
 - [ ] App icon and splash render correctly on device
-- [x] ~~Fix `expo-notifications` version mismatch~~ — resolved Aug 23 (PR #4):
-      package removed entirely; it was an SDK 55 package pulling a duplicate
-      `expo-constants` native module. `expo-doctor` 18/18
+- [ ] Fix `expo-notifications` version mismatch (54 vs SDK 55.0.x)
 - [ ] Audit `.env` — only `EXPO_PUBLIC_` keys in the app (anon key fine; **service role
       key NEVER**)
 - [ ] Separate production Supabase project from dev (don't ship test data)
@@ -379,10 +267,6 @@ surface something.
 - [ ] NOT NULL where applicable (user_id, workout_id, date)
 - [ ] Foreign keys with ON DELETE behavior defined *(needed for account deletion to work
       cleanly)*
-- [ ] DROP the orphan `streaks` table (+ its 4 RLS policies) — abandoned stored-counter
-      design; streak is now derived by `current_streak()` (Aug 23), nothing references
-      the table. Verify no references first, then drop in dashboard + remove from
-      `schema.sql`.
 
 ---
 
@@ -469,7 +353,6 @@ Skip it and you submit a binary nobody has ever run in its final form.
 
 Deferred, not cancelled. Revisit after App Store v1 is stable.
 
-
 - [ ] Recruit 12+ testers, **or** register an **organization** Play account — org accounts
       are exempt from the 12-tester/14-day closed-test rule. That exemption is the whole
       reason to consider an org account.
@@ -480,32 +363,22 @@ Deferred, not cancelled. Revisit after App Store v1 is stable.
 - [ ] Android 13+ POST_NOTIFICATIONS runtime permission
 - [ ] Verify `elevation` vs iOS `shadow*` styling renders correctly on Android
 - [ ] Privacy policy + account deletion already exist from the App Store launch — reuse
+
 ---
 
 ## v1.1 backlog (cut from v1 — don't lose these)
 
-- [ ] Images and Aesthetics for Cal
 - XP system, badges, achievements (+ their tables, RLS, trigger logic)
 - Daily challenge
-- [ ] Saving Pre-set workouts
 - **Workout reminder notifications** ("time to start a session") — 2–4 days: permissions,
   scheduling, timezone handling, Apple purpose strings, testing across app states.
   Deliberately deferred; better built once there are real users to time it against.
   The *existing* broken scheduled-notification code is removed in Day 1.
-- **Offline session queue** — persist unsaved workout results to device storage and
-  sync when connectivity returns (survives app restarts; needs dedup + a decision on
-  what date a late-synced session counts toward, since streaks care). The v1 fix only
-  keeps results in memory until save succeeds — good for network blips, not for
-  app-killed-mid-workout
-- **Logout-mid-session warning** — if a workout session is active when the user
-  taps Logout, confirm first: "You have an unfinished workout — discard it?"
-  (v1 behavior: it's silently discarded, which is correct but unceremonious)
 - Pull-to-refresh, tab/overlay animations
 - AsyncStorage → SecureStore migration
 - Settings screen, help & support, rate-us prompt
 - Dedicated analytics (App Store Connect + Supabase dashboard is enough at this scale)
 - iPad support
-- Email confirmation on
 
 ---
 
