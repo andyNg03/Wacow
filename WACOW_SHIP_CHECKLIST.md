@@ -136,6 +136,35 @@ to.** Listing them as open choices invites someone to spend a week building the 
 | Share App | ☑ wire | Trivial — native `Share.share()`, no backend |
 | Rate Us | ☑ delete | No App Store link exists pre-launch — can't wire a link that doesn't exist yet |
 
+> 🔴 **None of the above was ever implemented — found Sept 2.** The decisions were
+> recorded as a table with no checkboxes, so nothing tracked the work and it went
+> unnoticed for three weeks. `MenuList.js` still renders **all seven rows as dead
+> buttons**: `MenuItem` accepts an `onPress` prop and `MenuList` never passes one,
+> so every row taps and does nothing. The list also survives on Profile (via
+> `MenuList`) after MoreScreen was deleted in PR #4 — the rows moved, the decisions
+> didn't follow them. **This is the 2.1 / 4.2 "dead buttons" risk this section
+> opens by naming.** Tasks below.
+
+- [ ] **Rate Us — delete the row** (decided Aug 14, never done)
+- [ ] **Notifications — delete the row.** Not in the decision table above; it
+      advertises a feature whose code was deliberately removed on Day 1 and
+      deferred to v1.1. A dead row pointing at a non-existent feature is the worst
+      case of the three
+- [ ] **About — decide, then delete or wire.** Also not in the table. `AppInfoCard`
+      already renders app info directly below it on Profile, so this is likely
+      redundant — recommend delete
+- [ ] **Share App — wire** to native `Share.share()`. Trivial, no backend, no new
+      screen
+- [ ] **Help & Support — wire.** Needs a new screen with the two decided options
+      ("Question" / "Report Issue"). Depends on the support email existing
+- [ ] **Settings — wire (minimal) or cut.** Needs a new screen and its contents are
+      still TBD. **If it isn't scoped by the feature-freeze date, delete the row** —
+      the 1a default applies: undecided ships as fake, and fake is the rejection risk
+- [ ] **Delete Account — wire** to the Phase 2 Edge Function (tracked there; the row
+      itself stays a placeholder until that lands)
+- [ ] **Pass `onPress` through `MenuList`** for whichever rows survive, and confirm
+      no row renders without a handler — the structural fix behind all of the above
+
 **Group C — additions, not removals (tracked here so 1a is the single UI worklist)**
 
 - [x] Add the delete button — done Aug 21: **"Delete Account"** row in MoreScreen
@@ -152,8 +181,10 @@ to.** Listing them as open choices invites someone to spend a week building the 
   - [x] Device pass on merged main — the combined wizard (validation + keyboard),
         Profile's new layout, and Recent Workouts below the fold were never
         visually verified together
-  - [ ] Strip calories (a decided DELETE, nothing to wire it to) from HomeScreen's
-        WeekSummary + Recent Workouts during the 1c wiring pass
+  - [x] Strip calories (a decided DELETE, nothing to wire it to) from HomeScreen's
+        WeekSummary + Recent Workouts during the 1c wiring pass — done: Recent
+        Workouts' calories row became an exercise count (Home Pass 1, Aug 24),
+        WeekSummary's Calories stat deleted outright (Home Pass 2, Sept 2)
   - [x] `StatsScreen.js` is now an orphan on main — delete or mark
         kept-for-reference
 
@@ -175,11 +206,13 @@ to.** Listing them as open choices invites someone to spend a week building the 
     `BadgeCard`, `LatestAchievement`, `DailyChallenge` (kept for v1.1)
       **Legit constants, not fake data (leave alone):** `MUSCLE_GROUPS`,
       `CARD_COLORS`, `menuItems`, `BOX_CONFIGS`, `CHART_HEIGHT`
-- [ ] `ResultsOverlay.js:29` — hardcoded `currentStreak = 8` shows every user an
+- [x] `ResultsOverlay.js:29` — hardcoded `currentStreak = 8` shows every user an
       8-day streak after every workout *(found Aug 21; missed by the Group A pass,
-      which only swept the four main screens)*. Wire it to the real streak — the
-      HomeScreen 1c work computes the same number, so reuse that — or hide the
-      streak card for v1
+      which only swept the four main screens)*. **Fixed Aug 24:** calls
+      `current_streak(tz, assume_today := true)` — the overlay renders before the
+      save lands, so `assume_today` shows the streak the pending save produces,
+      keeping the overlay's display == recorded rule. Home passes no flag and
+      shows recorded truth
 
 ### 1b. Bug fixes
 
@@ -305,19 +338,41 @@ device pass pending)*
 *(Reshaped Aug 23 by the screen convergence — Stats' wiring now lives inside
 HomeScreen's item.)*
 
-- [ ] **HomeScreen (the dashboard)** — streak from `sessions` (consecutive days,
-      midnight rollover in the user's timezone; keep the logic in one place,
-      recommend a Postgres function/view); workout count from `sessions`; monthly
-      goal from `users.weekly_goal` + the same aggregation; this-week totals +
-      weekly chart from the current week's sessions; **Recent Workouts from
-      `sessions` newest-first (strip its fake calories)**; loading state; empty
-      state for a brand-new user. *(Aug 23 sweep landmine: clamp MonthlyGoal's
-      progress bar at 100% and guard divide-by-zero — the first user to beat
-      their goal overflows the bar)*
-- [ ] **WorkoutsScreen** — ~~save failure handling~~ done in 1b; trigger the streak
-      update after save
-- [ ] **ProfileScreen** — fetch name, member-since, weekly goal from `users`;
-      loading state
+- [x] **HomeScreen (the dashboard)** — **done in two passes, one item outstanding
+      (tracked separately below).** Pass 1 (Aug 24, `eb3b78c`): greeting from
+      `users.name`, workout count and Recent Workouts from one `sessions` fetch
+      with a `workouts(name)` embedded join, grouped per visit via
+      `coalesce(session_id, id)`; streak via `current_streak()`; three-state
+      loading/error/retry + empty state; `useFocusEffect` so a mounted tab
+      refetches on focus. Pass 2 (Sept 2, `0ab901a`): this-week totals, weekly
+      chart, and monthly-goal progress all derived in JS from the same fetch —
+      no extra queries. Landmines closed: MonthlyGoal's bar clamped at 100%, and
+      WeeklyChart's bars rescaled against a 60-minute floor (relative-only
+      scaling drew a 2-minute session as a full-height bar)
+- [ ] 🔴 **Monthly goal target is still invented** — `MONTHLY_GOAL = 20` is
+      hardcoded in `HomeScreen.js`, so every user is told "Complete 20 workouts
+      this month!" regardless of what they chose. `users.weekly_goal` **exists
+      and is written by the setup wizard** (Lose Weight → 5, Build Muscle → 4,
+      Stay Fit → 3) but is **read by nothing in the app**. This is the last
+      invented number on Home and sits squarely under the Red Flags list
+      ("any screen still showing invented data"). Read the column and scale it
+      to a monthly target; decide the empty case (wizard-skipped users → the
+      column's default of 3)
+- [x] **WorkoutsScreen** — ~~save failure handling~~ done in 1b;
+      ~~trigger the streak update after save~~ **obsolete Aug 24:** the streak is
+      derived by `current_streak()` on read, not stored, so there is no counter to
+      update. Same design change that orphaned the `streaks` table
+- [ ] **ProfileScreen** — the last screen rendering fake data. Wire: `ProfileHeader`'s
+      hardcoded `"Gym Hero"` → `users.name`; StatsGrid's `workouts = 54` →
+      grouped session count and `daysActive = 12` → count of *distinct* workout
+      days; PersonalInfo's "Member Since" → `users.created_at`, "Weekly Goal" →
+      `users.weekly_goal`; loading state. **Two open calls:** (a) `favorite_workout`
+      is a dead column — compute the most-frequent exercise from the sessions
+      fetch instead, or drop the row; (b) the wizard already stores age/sex/
+      height/weight and nothing displays them — surface or leave
+- [ ] **Extract `groupSessions()` out of `HomeScreen.js`** into a shared module
+      before ProfileScreen needs the same per-visit grouping — one copy, not two
+      that drift
 
 ---
 
@@ -369,12 +424,20 @@ surface something.
 - [x] ~~Fix `expo-notifications` version mismatch~~ — resolved Aug 23 (PR #4):
       package removed entirely; it was an SDK 55 package pulling a duplicate
       `expo-constants` native module. `expo-doctor` 18/18
-- [ ] Audit `.env` — only `EXPO_PUBLIC_` keys in the app (anon key fine; **service role
-      key NEVER**)
+- [x] Audit `.env` — only `EXPO_PUBLIC_` keys in the app (anon key fine; **service role
+      key NEVER**) — verified Sept 2: the file holds exactly two keys,
+      `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. No
+      service-role key present. **Re-check this whenever account deletion lands**,
+      since that's the work most likely to tempt someone into adding one
 - [ ] Separate production Supabase project from dev (don't ship test data)
 
 ### Database constraints
 
+- [ ] **Clean the junk/test rows in `sessions` FIRST** — this gates the two items
+      below: Postgres validates a new CHECK/NOT NULL against existing rows and
+      refuses to add the constraint if any row violates it. The junk also inflates
+      Home's workout count, since every pre-`session_id` row (null there) is
+      counted as its own gym visit via the `coalesce(session_id, id)` fallback
 - [ ] CHECK constraints for numeric ranges in `sessions` (weight ≥ 0, reps > 0, sets > 0)
 - [ ] NOT NULL where applicable (user_id, workout_id, date)
 - [ ] Foreign keys with ON DELETE behavior defined *(needed for account deletion to work
@@ -383,6 +446,12 @@ surface something.
       design; streak is now derived by `current_streak()` (Aug 23), nothing references
       the table. Verify no references first, then drop in dashboard + remove from
       `schema.sql`.
+- [ ] **Drop the two dead columns on `users`** in the same pass — `xp` (left from the
+      de-scoped gamification) and `favorite_workout` (never written by any code
+      path; the Profile row that displays it is hardcoded). Confirmed Sept 2 by
+      grep: neither is read or written anywhere in `src/`. *Skip `favorite_workout`
+      if the Profile pass decides to populate it rather than compute the value on
+      the fly.*
 
 ---
 
@@ -422,9 +491,16 @@ Skip it and you submit a binary nobody has ever run in its final form.
 
 ### Loading and error states (every Supabase call)
 
-- [ ] HomeScreen skeleton while fetching
-- [ ] WorkoutsScreen spinner during session save
-- [ ] StatsScreen skeleton while computing
+- [x] HomeScreen skeleton while fetching — done in Pass 1: spinner while loading,
+      error state with a Retry that re-runs the fetch, and an empty state for a
+      user with no sessions yet. Decorative fetches (name, streak) degrade quietly
+      rather than throwing an error card over a cosmetic failure
+- [ ] WorkoutsScreen spinner during session save — **confirmed still open Sept 2.**
+      There is a loading state for the *user-id fetch* (`userIdStatus`), but the
+      insert itself has no pending indicator, so a slow save looks like a frozen
+      button
+- [x] ~~StatsScreen skeleton while computing~~ — obsolete: StatsScreen was deleted
+      Aug 24 when Stats merged into Home
 - [ ] ProfileScreen skeleton while fetching
 - [ ] Network-error UI with retry on every screen
 
@@ -506,6 +582,7 @@ Deferred, not cancelled. Revisit after App Store v1 is stable.
 - Dedicated analytics (App Store Connect + Supabase dashboard is enough at this scale)
 - iPad support
 - Email confirmation on
+- 
 
 ---
 
