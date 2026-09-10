@@ -135,6 +135,7 @@ to.** Listing them as open choices invites someone to spend a week building the 
 | Help & Support | ☑ wire | New screen, two options: "Question" and "Report Issue" |
 | Share App | ☑ wire | Trivial — native `Share.share()`, no backend |
 | Rate Us | ☑ delete | No App Store link exists pre-launch — can't wire a link that doesn't exist yet |
+| About | ☑ wire | *(decided by Tuong, Sept 4)* New screen: "WaCow 2026, co-founded by Jiaxiu Li, Andrew Nguyen, Zahi Ladhkan, and Tarun Kancharla" (alphabetical) — use `src/style/theme.js`, not hardcoded styles |
 
 > 🔴 **None of the above was ever implemented — found Sept 2.** The decisions were
 > recorded as a table with no checkboxes, so nothing tracked the work and it went
@@ -150,9 +151,11 @@ to.** Listing them as open choices invites someone to spend a week building the 
       advertises a feature whose code was deliberately removed on Day 1 and
       deferred to v1.1. A dead row pointing at a non-existent feature is the worst
       case of the three
-- [ ] **About — decide, then delete or wire.** Also not in the table. `AppInfoCard`
-      already renders app info directly below it on Profile, so this is likely
-      redundant — recommend delete
+- [ ] **About — wire.** *(Decided by Tuong Sept 4, resolving the open question here.)*
+      New screen with the co-founder credit line from the table above, styled from
+      `theme.js`. **Check for overlap with `AppInfoCard`**, which already renders app
+      info directly below this row on Profile — if the About screen supersedes it,
+      remove the card rather than shipping both
 - [ ] **Share App — wire** to native `Share.share()`. Trivial, no backend, no new
       screen
 - [ ] **Help & Support — wire.** Needs a new screen with the two decided options
@@ -373,6 +376,46 @@ HomeScreen's item.)*
 - [ ] **Extract `groupSessions()` out of `HomeScreen.js`** into a shared module
       before ProfileScreen needs the same per-visit grouping — one copy, not two
       that drift
+
+### 1d. Workout screen redesign — Tuong's routines proposal (merged Sept 10, PR #8)
+
+`WorkoutPresetMockupScreen.js` (2,306 lines) is a **design mockup, deliberately
+front-end only** — zero `supabase` references; everything runs off `DUMMY_EXERCISES`,
+`INITIAL_ROUTINES`, and `DUMMY_HISTORY`. Andy reviewed and approves the direction
+(Sept 10); Tuong owns the backend and wiring. Tracked here so the wiring isn't
+mistaken for done.
+
+- [ ] 🔴 **`TabNav.js` currently points the Workout tab at the mockup**, so
+      `WorkoutsScreen` — and with it the entire save path, `session_id` stamping,
+      retry gate, input sanitizer, and results overlay — is **unreachable in the
+      running app. No workout can be saved while this stands.** Fine for design
+      review; **must be resolved before device testing or submission.** Either
+      repoint the import back to `WorkoutsScreen`, or finish wiring the mockup and
+      retire the old screen — not both half-live
+- [ ] **Routines / workout presets — backend.** New table(s) for a user's saved
+      routines and their exercise lists, with RLS matching the `sessions` pattern
+      (read/write own only). *Note: "Saving Pre-set workouts" currently sits in the
+      v1.1 backlog — building it now pulls it into v1, so confirm that's intended
+      scope rather than drift*
+- [ ] ⚠️ **Per-set weight is a schema change, not a UI change.** `sessions` today
+      stores one `weight` per row for the whole exercise; the mockup gives each set
+      its own. That needs a decision — a child `sets` table, or a JSON column on
+      `sessions` — and it **changes the shape every existing aggregation reads**.
+      Home's grouping, duration handling, and `current_streak()` all consume
+      `sessions`; re-verify each after the change lands
+- [ ] **Drag-to-reorder needs persistence** — an explicit ordering column, since row
+      order in Postgres is not stable and `select` without `order by` may return
+      anything
+- [ ] **Routine history — wire** (Tuong flags it as unwired in the merge commit)
+- [ ] **Re-verify Home Pass 1 + 2 against the new save path** once wiring lands.
+      Both passes derive from `sessions` rows written by the *old* screen; if the
+      new one writes a different shape, the dashboard silently degrades
+- [ ] **Migrate the hardened behavior forward, don't lose it.** `WorkoutsScreen`
+      carries a month of device-verified fixes (retry gate, digits-only inputs with
+      caps, zero-completion gate, completed-only save, overlay resume,
+      display == recorded). If the mockup becomes the real screen, each of these
+      needs re-implementing there — they are not UI polish, they are the fixes for
+      bugs that reached users' data
 
 ---
 

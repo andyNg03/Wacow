@@ -7,7 +7,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons'
 import HomeScreen from '../screens/HomeScreen'
-import WorkoutScreen from '../screens/WorkoutsScreen'
+import WorkoutScreen from '../screens/WorkoutPresetMockupScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import { colors } from '../style/theme'
 
