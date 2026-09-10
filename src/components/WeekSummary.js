@@ -1,4 +1,4 @@
-// WeekSummary — red gradient card showing workouts, active time, and calories for the week
+// WeekSummary — red gradient card showing workouts and active time for the week
 
 import { View, Text, StyleSheet } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -15,8 +15,8 @@ function StatItem({ value, label }) {
     )
 }
 
-// Props: workouts (number), activeTime (number in hours), calories (number)
-export default function WeekSummary({ workouts, activeTime, calories }) {
+// Props: workouts (number), activeTime (number in hours)
+export default function WeekSummary({ workouts, activeTime }) {
     return (
         // Offset black view behind the card creates the hard shadow effect
         <View style={styles.shadowWrapper}>
@@ -32,11 +32,10 @@ export default function WeekSummary({ workouts, activeTime, calories }) {
                     <Text style={styles.heading}>This Week</Text>
                 </View>
 
-                {/* Three stats side by side */}
+                {/* Stats side by side */}
                 <View style={styles.statsRow}>
                     <StatItem value={workouts} label="Workouts" />
                     <StatItem value={`${activeTime}h`} label="Active Time" />
-                    <StatItem value={calories} label="Calories" />
                 </View>
             </LinearGradient>
         </View>

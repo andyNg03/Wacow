@@ -43,8 +43,10 @@ function Bar({ day, value }) {
 
 // Props: weeklyData — array of { day: string, value: number }
 export default function WeeklyChart({ weeklyData }) {
-    // Recalculate max each render so bars scale correctly
-    maxValue = Math.max(...weeklyData.map(d => d.value))
+    // Scale floor of 60 min: a full-height bar means at least an hour.
+    // Below that, bars are absolute (2 min = a nub); above it, the week's
+    // biggest day takes over so heavy weeks still fit the chart.
+    maxValue = Math.max(60, ...weeklyData.map(d => d.value))
 
     return (
         <View style={styles.shadowWrapper}>

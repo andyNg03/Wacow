@@ -14,23 +14,10 @@ import WorkoutCard from '../components/WorkoutCard'
 import { supabase } from '../lib/supabase'
 import { colors, typography, spacing } from '../style/theme'
 
-// Hardcoded until Pass 2 — monthly goal, week totals, chart
-let goal = 20;
-let progress = 12;
-let weekWorkouts = 26;
-let activeTime = 12; // in hours
-let calories = 2520;
+// Monthly workout goal — a v1 design constant (no goal-setting UI yet)
+const MONTHLY_GOAL = 20
 
-// Each day has a value representing workout intensity/minutes
-const weeklyData = [
-    { day: 'Mon', value: 65 },
-    { day: 'Tue', value: 30 },
-    { day: 'Wed', value: 40 },
-    { day: 'Thu', value: 100 },
-    { day: 'Fri', value: 50 },
-    { day: 'Sat', value: 0 },
-    { day: 'Sun', value: 20 },
-]
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 // Gradient pairs cycled across the recent-workout cards (same three
 // looks the fake cards had)
@@ -54,6 +41,41 @@ function groupSessions(rows) {
         map.get(key).names.push(row.workouts?.name ?? 'Exercise')
     }
     return [...map.values()]
+}
+
+// Week + month stats derived from the already-fetched groups — no extra
+// network trips. new Date(g.date) converts the stored UTC timestamp to
+// device-local time, so "which day" needs no tz plumbing here.
+function deriveStats(groups) {
+    const now = new Date()
+    // Monday 00:00 local. getDay() is 0=Sun..6=Sat; (x+6)%7 shifts to 0=Mon.
+    const monday = new Date(now)
+    monday.setHours(0, 0, 0, 0)
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
+
+    let weekCount = 0
+    let weekMinutes = 0
+    let monthCount = 0
+    const chartMinutes = [0, 0, 0, 0, 0, 0, 0]
+
+    for (const g of groups) {
+        const d = new Date(g.date)
+        if (d >= monday) {
+            weekCount += 1
+            weekMinutes += g.duration ?? 0
+            chartMinutes[(d.getDay() + 6) % 7] += g.duration ?? 0
+        }
+        if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
+            monthCount += 1
+        }
+    }
+
+    return {
+        weekCount,
+        weekHours: Math.round((weekMinutes / 60) * 10) / 10, // one decimal
+        monthCount,
+        weeklyData: DAY_LABELS.map((day, i) => ({ day, value: chartMinutes[i] })),
+    }
 }
 
 export default function HomeScreen() {
@@ -95,6 +117,8 @@ export default function HomeScreen() {
     // pointer stable so the focus effect doesn't re-fire per render.
     useFocusEffect(loadDashboard)
 
+    const { weekCount, weekHours, monthCount, weeklyData } = deriveStats(groups)
+
     return (
         <ScrollView style={styles.container}>
             {/* Hero greeting card at the top */}
@@ -105,7 +129,7 @@ export default function HomeScreen() {
                 their own margins and stay outside it */}
             <View style={styles.padded}>
                 {/* Monthly goal with progress bar */}
-                <MonthlyGoal goal={goal} progress={progress} />
+                <MonthlyGoal goal={MONTHLY_GOAL} progress={monthCount} />
             </View>
 
             {/* Stat cards */}
@@ -120,7 +144,7 @@ export default function HomeScreen() {
 
             <View style={styles.padded}>
                 {/* Weekly summary card — workouts, active time, calories */}
-                <WeekSummary workouts={weekWorkouts} activeTime={activeTime} calories={calories} />
+                <WeekSummary workouts={weekCount} activeTime={weekHours} />
 
                 {/* Bar chart showing activity per day */}
                 <WeeklyChart weeklyData={weeklyData} />

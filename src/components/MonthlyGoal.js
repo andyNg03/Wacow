@@ -7,8 +7,8 @@ import { colors, borders, spacing, typography } from '../style/theme'
 
 // Props: goal (number), progress (number — how many workouts done so far)
 export default function MonthlyGoal({ goal, progress }) {
-    // Calculate percentage for the progress bar width
-    const progressPercent = (progress / goal) * 100
+    // Clamped so an over-achieved month can't draw the fill past the track
+    const progressPercent = Math.min((progress / goal) * 100, 100)
 
     return (
         <View style={styles.shadowWrapper}>
