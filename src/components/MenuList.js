@@ -6,15 +6,20 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors, borders, spacing, typography } from '../style/theme'
 
 const menuItems = [
-    { label: 'Settings',       icon: 'settings-outline',           gradientColors: ['#4b5563', '#374151'] },
-    { label: 'Notifications',  icon: 'notifications-outline',      gradientColors: ['#F5A623', '#F97316'] },
+    // Settings row hidden — no destination/functionality behind it yet.
+    // Keep the entry here so it's a one-line restore once there's something to wire it to.
+    // { label: 'Settings',       icon: 'settings-outline',           gradientColors: ['#4b5563', '#374151'] },
+    // Notifications hidden — no notification system exists yet (deferred
+    // to v1.1, see backlog). Uncomment once there's something behind it.
+    // { label: 'Notifications',  icon: 'notifications-outline',      gradientColors: ['#F5A623', '#F97316'] },
     { label: 'Help & Support', icon: 'help-circle-outline',        gradientColors: ['#374151', '#1f2937'] },
     { label: 'Share App',      icon: 'share-social-outline',       gradientColors: [colors.achievementCard, '#111827'] },
     { label: 'Rate Us',        icon: 'star-outline',               gradientColors: ['#F5A623', '#F97316'] },
     { label: 'About',          icon: 'information-circle-outline', gradientColors: [colors.primary, '#b91c1c'] },
-    // Destructive action last by convention. Placeholder until the Phase 2
-    // account-deletion Edge Function exists to wire it to.
-    { label: 'Delete Account', icon: 'trash-outline',              gradientColors: [colors.achievementCard, '#111827'] },
+    // Delete Account hidden — needs the Phase 2 account-deletion Edge
+    // Function deployed first (service-role key, can't run client-side).
+    // Uncomment once that function exists and is wired up.
+    // { label: 'Delete Account', icon: 'trash-outline',              gradientColors: [colors.achievementCard, '#111827'] },
 ]
 
 // TouchableOpacity is the outermost wrapper so nothing blocks the tap
@@ -36,13 +41,21 @@ function MenuItem({ label, icon, gradientColors, onPress }) {
     )
 }
 
-// All rows are placeholders for now — which ones survive is a
-// Phase 1a de-scope decision.
-export default function MenuList() {
+const PRESS_HANDLERS = {
+    'Share App': 'onShareApp',
+    'Rate Us': 'onRateApp',
+}
+
+// Remaining rows are still placeholders — wired up one at a time.
+export default function MenuList(props) {
     return (
         <View style={styles.container}>
             {menuItems.map((item, i) => (
-                <MenuItem key={i} {...item} />
+                <MenuItem
+                    key={i}
+                    {...item}
+                    onPress={props[PRESS_HANDLERS[item.label]]}
+                />
             ))}
         </View>
     )
