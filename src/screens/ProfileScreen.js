@@ -1,7 +1,7 @@
 // Profile Screen — user header, stats, personal info, edit/logout buttons,
 // plus the app info and menu that used to live on the More tab
 
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Share, Linking } from 'react-native'
 import ProfileHeader from '../components/ProfileHeader'
 import StatsGrid from '../components/StatsGrid'
 import PersonalInfo from '../components/PersonalInfo'
@@ -10,6 +10,11 @@ import MenuList from '../components/MenuList'
 import MoreFooter from '../components/MoreFooter'
 import { supabase } from '../lib/supabase'
 import { colors, borders, spacing, typography } from '../style/theme'
+
+// Set this once WaCow ships — App Store Connect > App Information > Apple ID
+// (the numeric ID in the app's App Store URL). Rate Us is fully wired below;
+// this is the only thing missing until launch.
+const APP_STORE_ID = null
 
 // Hardcoded for now — will come from Supabase once auth is connected
 let workouts = 54;
@@ -27,6 +32,23 @@ export default function ProfileScreen() {
         if (error) Alert.alert('Error', error.message)
     }
 
+    // Opens the native iOS share sheet. No store link yet — add one once
+    // WaCow is live on the App Store.
+    const handleShareApp = () => {
+        Share.share({ message: "Check out WaCow — the workout tracker I've been using!" })
+    }
+
+    // Deep-links straight to the "write a review" flow in the App Store app.
+    // Pre-launch there's no App Store listing yet, so this is honest about
+    // that instead of silently failing or doing nothing.
+    const handleRateApp = () => {
+        if (!APP_STORE_ID) {
+            Alert.alert("Not on the App Store yet", "WaCow isn't live yet — check back after launch!")
+            return
+        }
+        Linking.openURL(`itms-apps://itunes.apple.com/app/id${APP_STORE_ID}?action=write-review`)
+    }
+
     return (
         <ScrollView style={styles.container}>
             {/* User avatar and name */}
@@ -39,7 +61,7 @@ export default function ProfileScreen() {
             <PersonalInfo data={personalInfo} />
 
             {/* Menu — moved here from the old More tab */}
-            <MenuList />
+            <MenuList onShareApp={handleShareApp} onRateApp={handleRateApp} />
 
             {/* Logout button — white with red border */}
             <View style={styles.logoutShadow}>
